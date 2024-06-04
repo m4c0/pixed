@@ -28,7 +28,8 @@ static mno::req<void> dump_chunk(yoyo::reader &in) {
       })
       .fmap([&] { return in.read_u32(); })
       .map([&](auto crc) {
-        silog::log(silog::info, "%d %d", type, data.size());
+        silog::log(silog::info, "%.*s %d", 4,
+                   reinterpret_cast<const char *>(&type), data.size());
       });
 }
 
