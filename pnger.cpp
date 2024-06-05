@@ -11,7 +11,7 @@ static bool signature_matches(uint64_t hdr) {
   return hdr == 0x0A1A0A0D474E5089;
 }
 
-static mno::req<void> dump_chunk(yoyo::reader &in) {
+static mno::req<bool> read_chunk(yoyo::reader &in) {
   uint32_t type{};
   hai::array<uint8_t> data{};
   return in.read_u32_be()
@@ -27,17 +27,14 @@ static mno::req<void> dump_chunk(yoyo::reader &in) {
         return in.read(data.begin(), data.size());
       })
       .fmap([&] { return in.read_u32(); })
-      .map([&](auto crc) {
-        silog::log(silog::info, "%.*s %d", 4,
-                   reinterpret_cast<const char *>(&type), data.size());
-      });
+      .map([&](auto crc) { return type == 'TLPs'; });
 }
 
-static mno::req<void> dump_png(yoyo::reader &in) {
+static mno::req<bool> read_png(yoyo::reader &in) {
   return in.read_u64()
       .assert(signature_matches, "file signature doesn't match")
-      .map([](auto) {})
-      .until_failure([&] { return dump_chunk(in); },
+      .map([](auto) { return false; })
+      .until_failure([&](auto res) { return read_chunk(in); },
                      [&](auto msg) { return !in.eof().unwrap(false); });
 }
 
@@ -64,8 +61,8 @@ int main(int argc, char **argv) try {
       break;
 
     case 'i':
-      // TODO: throw if error
-      yoyo::file_reader::open(val).fmap(dump_png).map([] {}).log_error();
+      if (!yoyo::file_reader::open(val).fmap(read_png).log_error())
+        throw 1;
       break;
     case 'o':
       break;
