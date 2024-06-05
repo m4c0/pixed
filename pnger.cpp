@@ -10,6 +10,7 @@ using namespace traits::ints;
 using chunk_t = hai::varray<uint8_t>;
 
 static constexpr const auto pal_name = jute::view{"pixed palette"};
+static constexpr const unsigned initial_size = sizeof(pal_name) + 1;
 
 static bool signature_matches(uint64_t hdr) {
   return hdr == 0x0A1A0A0D474E5089;
@@ -65,7 +66,6 @@ Where:
 }
 
 chunk_t new_sPLT() {
-  constexpr const auto initial_size = sizeof(pal_name) + 1;
   chunk_t res{initial_size};
   res.expand(initial_size);
 
@@ -77,11 +77,42 @@ chunk_t new_sPLT() {
   return res;
 }
 
+void append_sPLT(chunk_t &sPLT, const char *val) {
+  if (sPLT.size() == 0) {
+    silog::log(silog::error, "attempt of appending to a non-existing palette");
+    throw 0;
+  }
+
+  auto c = val;
+  for (auto p = 0; p < 4; p++) {
+    uint8_t n{};
+    for (auto n = 0; n < 2; n++, c++) {
+      n <<= 4;
+      if (*c >= '0' && *c <= '9') {
+        n |= (*c - '0');
+      } else if (*c >= 'A' && *c <= 'F') {
+        n |= (*c - 'A');
+      } else if (*c >= 'a' && *c <= 'f') {
+        n |= (*c - 'a');
+      } else {
+        silog::log(silog::error, "invalid colour definition [%s]", val);
+        throw 0;
+      }
+    }
+    sPLT.push_back_doubling(n);
+  }
+
+  // Frequency - zero'd since this is a pseudo-palette
+  sPLT.push_back_doubling(0);
+  sPLT.push_back_doubling(0);
+}
+
 int main(int argc, char **argv) try {
   chunk_t sPLT{};
   auto opts = gopt_parse(argc, argv, "i:o:rna:", [&](auto ch, auto val) {
     switch (ch) {
     case 'a':
+      append_sPLT(sPLT, val);
       break;
     case 'r':
       sPLT = {};
@@ -105,7 +136,18 @@ int main(int argc, char **argv) try {
   if (opts.argc != 0)
     usage();
 
-  silog::log(silog::info, "Palette size: %d", sPLT.size());
+  if (sPLT.size() == 0) {
+    silog::log(silog::info, "No palette present");
+  } else {
+    unsigned size = sPLT.size() - initial_size;
+    unsigned count = size / 6;
+    silog::log(silog::info, "Palette size: %d", count);
+    auto c = sPLT.begin() + initial_size;
+    for (auto i = 0; i < count; i++, c += 6) {
+      silog::log(silog::info, "- Colour %3d: %02x%02x%02x%02x", i + 1, c[0],
+                 c[1], c[2], c[3]);
+    }
+  }
 
   return 0;
 } catch (...) {
