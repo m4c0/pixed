@@ -43,32 +43,31 @@ static mno::req<void> dump_png(yoyo::reader &in) {
 
 void usage() {
   silog::log(silog::error, R"(
-Usage: pnger.exe [-r | -n | -a <pal>]
+Usage: pnger.exe -i <input> (-r | -n | -a <pal> | ...) [-o <output>]
 
 Where:
-        -r: remove palette from sPLT
-        -n: creates or clear palette in sPLT
         -a: append <pal> (RRGGBBAA) to sPLT
-
-Notes:
-        "-r", "-n" and "-a" are mutually exclusive. If neither is informed, dump sPLT.
+        -i: input filename
+        -n: creates or clear palette in sPLT
+        -o: output filename. If absent, no file modification is done
+        -r: remove palette from sPLT
 )");
   throw 0;
 }
 
 int main(int argc, char **argv) try {
-  const char *pal{};
-  char mode{};
-  auto opts = gopt_parse(argc, argv, "rna:", [&](auto ch, auto val) {
+  auto opts = gopt_parse(argc, argv, "i:o:rna:", [&](auto ch, auto val) {
     switch (ch) {
     case 'a':
-      pal = val;
-    // fallthrough
     case 'r':
     case 'n':
-      if (mode)
-        usage();
-      mode = ch;
+      break;
+
+    case 'i':
+      // TODO: throw if error
+      yoyo::file_reader::open(val).fmap(dump_png).map([] {}).log_error();
+      break;
+    case 'o':
       break;
     default:
       usage();
@@ -78,12 +77,7 @@ int main(int argc, char **argv) try {
   if (opts.argc != 0)
     usage();
 
-  bool res = yoyo::file_reader::open("blank.png")
-                 .fmap(dump_png)
-                 .map([] { return true; })
-                 .log_error();
-
-  return res ? 0 : 1;
+  return 0;
 } catch (...) {
   return 1;
 }
