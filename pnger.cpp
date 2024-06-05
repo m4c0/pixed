@@ -16,7 +16,7 @@ static bool signature_matches(uint64_t hdr) {
   return hdr == 0x0A1A0A0D474E5089;
 }
 
-static mno::req<chunk_t> read_sPLT(yoyo::reader &in) {
+static mno::req<chunk_t> read_sPLT(chunk_t current, yoyo::reader &in) {
   uint32_t type{};
   chunk_t data{};
   return in.read_u32_be()
@@ -39,7 +39,7 @@ static mno::req<chunk_t> read_sPLT(yoyo::reader &in) {
         if (type == 'TLPs' && name == pal_name)
           return traits::move(data);
 
-        return chunk_t{};
+        return traits::move(current);
       });
 }
 
@@ -47,8 +47,9 @@ static mno::req<chunk_t> find_sPLT_in_png(yoyo::reader &in) {
   return in.read_u64()
       .assert(signature_matches, "file signature doesn't match")
       .map([](auto _signature) { return chunk_t{}; })
-      .until_failure([&](auto &&res) { return read_sPLT(in); },
-                     [&](auto msg) { return !in.eof().unwrap(false); });
+      .until_failure(
+          [&](auto &&res) { return read_sPLT(traits::move(res), in); },
+          [&](auto msg) { return !in.eof().unwrap(false); });
 }
 
 void usage() {
