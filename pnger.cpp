@@ -66,8 +66,6 @@ static mno::req<chunk_t> find_sPLT_in_png(yoyo::reader &in) {
           [&](auto msg) { return !in.eof().unwrap(false); });
 }
 
-static mno::req<void> replace_sPLT(yoyo::reader &in, yoyo::writer &out) {}
-
 chunk_t new_sPLT() {
   chunk_t res{initial_size};
   res.expand(initial_size);
@@ -110,7 +108,13 @@ void append_sPLT(chunk_t &sPLT, const char *val) {
   sPLT.push_back_doubling(0);
 }
 
+static mno::req<void> replace_sPLT(yoyo::reader &in, yoyo::writer &out,
+                                   const chunk_t &sPLT) {
+  return {};
+}
+
 int main(int argc, char **argv) try {
+  mno::req<yoyo::file_reader> in{};
   chunk_t sPLT{};
   auto opts = gopt_parse(argc, argv, "i:o:rna:", [&](auto ch, auto val) {
     switch (ch) {
@@ -125,12 +129,19 @@ int main(int argc, char **argv) try {
       break;
 
     case 'i':
-      sPLT = yoyo::file_reader::open(val).fmap(find_sPLT_in_png).log_error([] {
-        throw 0;
-      });
+      in = yoyo::file_reader::open(val);
+      sPLT = in.fmap(find_sPLT_in_png).log_error([] { throw 0; });
       break;
-    case 'o':
+    case 'o': {
+      in.fmap([](auto &in) { return in.seekg(0, yoyo::seek_mode::set); })
+          .fmap([&] { return yoyo::file_writer::open(val); })
+          .fmap([&](auto &out) {
+            return in.fmap(
+                [&](auto &in) { return replace_sPLT(in, out, sPLT); });
+          })
+          .log_error([] { throw 0; });
       break;
+    }
     default:
       usage();
       break;
