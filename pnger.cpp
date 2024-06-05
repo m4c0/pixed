@@ -7,14 +7,15 @@ import traits;
 import yoyo;
 
 using namespace traits::ints;
+using chunk_t = hai::array<uint8_t>;
 
 static bool signature_matches(uint64_t hdr) {
   return hdr == 0x0A1A0A0D474E5089;
 }
 
-static mno::req<bool> read_chunk(yoyo::reader &in) {
+static mno::req<chunk_t> read_sPLT(yoyo::reader &in) {
   uint32_t type{};
-  hai::array<uint8_t> data{};
+  chunk_t data{};
   return in.read_u32_be()
       .fmap([&](auto l) {
         data.set_capacity(l);
@@ -31,15 +32,18 @@ static mno::req<bool> read_chunk(yoyo::reader &in) {
       .map([&](auto crc) {
         auto name =
             jute::view::unsafe(reinterpret_cast<const char *>(data.begin()));
-        return type == 'TLPs' && name == "pixed palette";
+        if (type == 'TLPs' && name == "pixed palette")
+          return traits::move(data);
+
+        return chunk_t{};
       });
 }
 
-static mno::req<bool> read_png(yoyo::reader &in) {
+static mno::req<chunk_t> find_sPLT_in_png(yoyo::reader &in) {
   return in.read_u64()
       .assert(signature_matches, "file signature doesn't match")
-      .map([](auto) { return false; })
-      .until_failure([&](auto res) { return read_chunk(in); },
+      .map([](auto _signature) { return chunk_t{}; })
+      .until_failure([&](auto &&res) { return read_sPLT(in); },
                      [&](auto msg) { return !in.eof().unwrap(false); });
 }
 
@@ -58,6 +62,7 @@ Where:
 }
 
 int main(int argc, char **argv) try {
+  chunk_t sPLT{};
   auto opts = gopt_parse(argc, argv, "i:o:rna:", [&](auto ch, auto val) {
     switch (ch) {
     case 'a':
@@ -66,8 +71,9 @@ int main(int argc, char **argv) try {
       break;
 
     case 'i':
-      if (!yoyo::file_reader::open(val).fmap(read_png).log_error())
-        throw 1;
+      sPLT = yoyo::file_reader::open(val).fmap(find_sPLT_in_png).log_error([] {
+        throw 0;
+      });
       break;
     case 'o':
       break;
