@@ -1,5 +1,5 @@
 #pragma leco tool
-
+import gopt;
 import hai;
 import silog;
 import traits;
@@ -41,11 +41,49 @@ static mno::req<void> dump_png(yoyo::reader &in) {
                      [&](auto msg) { return !in.eof().unwrap(false); });
 }
 
-int main() {
+void usage() {
+  silog::log(silog::error, R"(
+Usage: pnger.exe [-r | -n | -a <pal>]
+
+Where:
+        -r: remove palette from sPLT
+        -n: creates or clear palette in sPLT
+        -a: append <pal> (RRGGBBAA) to sPLT
+
+Notes:
+        "-r", "-n" and "-a" are mutually exclusive. If neither is informed, dump sPLT.
+)");
+  throw 0;
+}
+
+int main(int argc, char **argv) try {
+  const char *pal{};
+  char mode{};
+  auto opts = gopt_parse(argc, argv, "rna:", [&](auto ch, auto val) {
+    switch (ch) {
+    case 'a':
+      pal = val;
+    // fallthrough
+    case 'r':
+    case 'n':
+      if (mode)
+        usage();
+      mode = ch;
+      break;
+    default:
+      usage();
+      break;
+    }
+  });
+  if (opts.argc != 0)
+    usage();
+
   bool res = yoyo::file_reader::open("blank.png")
                  .fmap(dump_png)
                  .map([] { return true; })
                  .log_error();
 
   return res ? 0 : 1;
+} catch (...) {
+  return 1;
 }
