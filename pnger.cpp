@@ -84,16 +84,16 @@ void append_sPLT(chunk_t &sPLT, const char *val) {
   }
 
   auto c = val;
-  for (auto p = 0; p < 4; p++) {
+  for (auto i = 0; i < 4; i++) {
     uint8_t n{};
-    for (auto n = 0; n < 2; n++, c++) {
+    for (auto j = 0; j < 2; j++, c++) {
       n <<= 4;
       if (*c >= '0' && *c <= '9') {
         n |= (*c - '0');
       } else if (*c >= 'A' && *c <= 'F') {
-        n |= (*c - 'A');
+        n |= (*c - 'A') + 10;
       } else if (*c >= 'a' && *c <= 'f') {
-        n |= (*c - 'a');
+        n |= (*c - 'a') + 10;
       } else {
         silog::log(silog::error, "invalid colour definition [%s]", val);
         throw 0;
