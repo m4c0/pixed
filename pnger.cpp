@@ -7,7 +7,9 @@ import traits;
 import yoyo;
 
 using namespace traits::ints;
-using chunk_t = hai::array<uint8_t>;
+using chunk_t = hai::varray<uint8_t>;
+
+static constexpr const auto pal_name = jute::view{"pixed palette"};
 
 static bool signature_matches(uint64_t hdr) {
   return hdr == 0x0A1A0A0D474E5089;
@@ -19,6 +21,7 @@ static mno::req<chunk_t> read_sPLT(yoyo::reader &in) {
   return in.read_u32_be()
       .fmap([&](auto l) {
         data.set_capacity(l);
+        data.expand(l);
         return in.read_u32();
       })
       .fmap([&](auto t) {
@@ -32,7 +35,7 @@ static mno::req<chunk_t> read_sPLT(yoyo::reader &in) {
       .map([&](auto crc) {
         auto name =
             jute::view::unsafe(reinterpret_cast<const char *>(data.begin()));
-        if (type == 'TLPs' && name == "pixed palette")
+        if (type == 'TLPs' && name == pal_name)
           return traits::move(data);
 
         return chunk_t{};
@@ -61,13 +64,30 @@ Where:
   throw 0;
 }
 
+chunk_t new_sPLT() {
+  constexpr const auto initial_size = sizeof(pal_name) + 1;
+  chunk_t res{initial_size};
+  res.expand(initial_size);
+
+  char *buf = reinterpret_cast<char *>(res.begin());
+  for (auto c : pal_name)
+    *buf++ = c;
+
+  *buf++ = 8;
+  return res;
+}
+
 int main(int argc, char **argv) try {
   chunk_t sPLT{};
   auto opts = gopt_parse(argc, argv, "i:o:rna:", [&](auto ch, auto val) {
     switch (ch) {
     case 'a':
+      break;
     case 'r':
+      sPLT = {};
+      break;
     case 'n':
+      sPLT = new_sPLT();
       break;
 
     case 'i':
@@ -84,6 +104,8 @@ int main(int argc, char **argv) try {
   });
   if (opts.argc != 0)
     usage();
+
+  silog::log(silog::info, "Palette size: %d", sPLT.size());
 
   return 0;
 } catch (...) {
