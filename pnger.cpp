@@ -9,6 +9,20 @@ import yoyo;
 using namespace traits::ints;
 using chunk_t = hai::varray<uint8_t>;
 
+static void usage() {
+  silog::log(silog::error, R"(
+Usage: pnger.exe -i <input> (-r | -n | -a <pal> | ...) [-o <output>]
+
+Where:
+        -a: append <pal> (RRGGBBAA) to sPLT
+        -i: input filename
+        -n: creates or clear palette in sPLT
+        -o: output filename. If absent, no file modification is done
+        -r: remove palette from sPLT
+)");
+  throw 0;
+}
+
 static constexpr const auto pal_name = jute::view{"pixed palette"};
 static constexpr const unsigned initial_size = sizeof(pal_name) + 1;
 
@@ -52,19 +66,7 @@ static mno::req<chunk_t> find_sPLT_in_png(yoyo::reader &in) {
           [&](auto msg) { return !in.eof().unwrap(false); });
 }
 
-void usage() {
-  silog::log(silog::error, R"(
-Usage: pnger.exe -i <input> (-r | -n | -a <pal> | ...) [-o <output>]
-
-Where:
-        -a: append <pal> (RRGGBBAA) to sPLT
-        -i: input filename
-        -n: creates or clear palette in sPLT
-        -o: output filename. If absent, no file modification is done
-        -r: remove palette from sPLT
-)");
-  throw 0;
-}
+static mno::req<void> replace_sPLT(yoyo::reader &in, yoyo::writer &out) {}
 
 chunk_t new_sPLT() {
   chunk_t res{initial_size};
