@@ -1,6 +1,7 @@
 #pragma leco tool
 import gopt;
 import hai;
+import jute;
 import silog;
 import traits;
 import yoyo;
@@ -27,7 +28,11 @@ static mno::req<bool> read_chunk(yoyo::reader &in) {
         return in.read(data.begin(), data.size());
       })
       .fmap([&] { return in.read_u32(); })
-      .map([&](auto crc) { return type == 'TLPs'; });
+      .map([&](auto crc) {
+        auto name =
+            jute::view::unsafe(reinterpret_cast<const char *>(data.begin()));
+        return type == 'TLPs' && name == "pixed palette";
+      });
 }
 
 static mno::req<bool> read_png(yoyo::reader &in) {
