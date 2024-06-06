@@ -117,9 +117,24 @@ void append_sPLT(chunk_data_t &sPLT, const char *val) {
   sPLT.push_back_doubling(0);
 }
 
+static mno::req<void> write_chunk(yoyo::writer &out, uint32_t type,
+                                  const chunk_data_t &data) {
+  return mno::req<void>{};
+}
+
 static mno::req<void> pass_chunk(yoyo::reader &in, yoyo::writer &out,
                                  const chunk_data_t &sPLT) {
-  return mno::req<void>{};
+  return read_chunk(in).fmap([&](chunk &c) {
+    if (is_sPLT(c))
+      return mno::req<void>{};
+
+    if (c.type == 'TADI')
+      return write_chunk(out, 'TLPs', sPLT).fmap([&] {
+        return write_chunk(out, c.type, c.data);
+      });
+
+    return write_chunk(out, c.type, c.data);
+  });
 }
 static mno::req<void> replace_sPLT(yoyo::reader &in, yoyo::writer &out,
                                    const chunk_data_t &sPLT) {
