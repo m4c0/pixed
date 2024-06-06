@@ -54,17 +54,16 @@ static mno::req<chunk> read_chunk(yoyo::reader &in) {
       .map([&](auto crc) { return traits::move(res); });
 }
 
+static bool is_sPLT(const chunk &c) {
+  auto &[type, data] = c;
+  auto name = jute::view::unsafe(reinterpret_cast<const char *>(data.begin()));
+  return type == 'TLPs' && name == pal_name;
+}
+
 static mno::req<chunk_data_t> read_sPLT(chunk_data_t current,
                                         yoyo::reader &in) {
-  return read_chunk(in).map([&](chunk &c) {
-    auto &[type, data] = c;
-    auto name =
-        jute::view::unsafe(reinterpret_cast<const char *>(data.begin()));
-    if (type == 'TLPs' && name == pal_name)
-      return traits::move(data);
-
-    return traits::move(current);
-  });
+  return read_chunk(in).map(
+      [&](chunk &c) { return traits::move(is_sPLT(c) ? c.data : current); });
 }
 
 static mno::req<chunk_data_t> find_sPLT_in_png(yoyo::reader &in) {
