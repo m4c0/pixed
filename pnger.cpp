@@ -30,7 +30,7 @@ Where:
 }
 
 static constexpr const auto pal_name = jute::view{"pixed palette"};
-static constexpr const unsigned initial_size = sizeof(pal_name) + 1;
+static constexpr const unsigned initial_size = pal_name.size() + 2;
 
 static bool signature_matches(uint64_t hdr) {
   return hdr == 0x0A1A0A0D474E5089;
@@ -87,6 +87,7 @@ chunk_data_t new_sPLT() {
   for (auto c : pal_name)
     *buf++ = c;
 
+  *buf++ = 0;
   *buf++ = 8;
   return res;
 }
