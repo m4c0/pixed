@@ -12,6 +12,7 @@ using chunk_data_t = hai::varray<uint8_t>;
 struct chunk {
   uint32_t type;
   chunk_data_t data;
+  uint32_t crc;
 };
 
 static void usage() {
@@ -51,11 +52,14 @@ static mno::req<chunk> read_chunk(yoyo::reader &in) {
         return in.read(res.data.begin(), res.data.size());
       })
       .fmap([&] { return in.read_u32(); })
-      .map([&](auto crc) { return traits::move(res); });
+      .map([&](auto crc) {
+        res.crc = crc;
+        return traits::move(res);
+      });
 }
 
 static bool is_sPLT(const chunk &c) {
-  auto &[type, data] = c;
+  auto &[type, data, crc] = c;
   auto name = jute::view::unsafe(reinterpret_cast<const char *>(data.begin()));
   return type == 'TLPs' && name == pal_name;
 }
