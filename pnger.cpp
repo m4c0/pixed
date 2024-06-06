@@ -128,7 +128,7 @@ static mno::req<void> pass_chunk(yoyo::reader &in, yoyo::writer &out,
     if (is_sPLT(c))
       return mno::req<void>{};
 
-    if (c.type == 'TADI')
+    if (c.type == 'TADI' && sPLT.size() > 0)
       return write_chunk(out, 'TLPs', sPLT).fmap([&] {
         return write_chunk(out, c.type, c.data);
       });
