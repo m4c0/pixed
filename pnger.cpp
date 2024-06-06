@@ -64,7 +64,7 @@ static bool is_sPLT(const chunk &c) {
   return type == 'TLPs' && name == pal_name;
 }
 
-static mno::req<chunk_data_t> read_sPLT(chunk_data_t current,
+static mno::req<chunk_data_t> read_sPLT(chunk_data_t &current,
                                         yoyo::reader &in) {
   return read_chunk(in).map(
       [&](chunk &c) { return traits::move(is_sPLT(c) ? c.data : current); });
@@ -74,9 +74,8 @@ static mno::req<chunk_data_t> find_sPLT_in_png(yoyo::reader &in) {
   return in.read_u64()
       .assert(signature_matches, "file signature doesn't match")
       .map([](auto _signature) { return chunk_data_t{}; })
-      .until_failure(
-          [&](auto &&res) { return read_sPLT(traits::move(res), in); },
-          [&](auto msg) { return !in.eof().unwrap(false); });
+      .until_failure([&in](auto &&res) { return read_sPLT(res, in); },
+                     [&in](auto msg) { return !in.eof().unwrap(false); });
 }
 
 chunk_data_t new_sPLT() {
