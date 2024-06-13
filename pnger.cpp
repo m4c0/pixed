@@ -160,17 +160,18 @@ int main(int argc, char **argv) try {
             if (fourcc != "sPLT")
               return mno::req{frk::scan_action::take};
 
-            hai::array<char> data{static_cast<unsigned>(r.raw_size())};
-            return r.read(data.begin(), data.size()).map([&] {
-              if (jute::view::unsafe(data.begin()) == pal_name) {
-                sPLT.set_capacity(data.size());
-                sPLT.expand(data.size());
-                for (auto i = 0; i < data.size(); i++) {
-                  sPLT[i] = data[i];
-                }
-              }
-              return frk::scan_action::take;
-            });
+            chunk_data_t data{static_cast<unsigned>(r.raw_size())};
+            data.set_capacity(r.raw_size());
+            data.expand(r.raw_size());
+            return r.read(data.begin(), data.size())
+                .map([&] {
+                  if (jute::view::unsafe(
+                          reinterpret_cast<char *>(data.begin())) != pal_name)
+                    return;
+
+                  sPLT = traits::move(data);
+                })
+                .map([] { return frk::scan_action::take; });
           }))
           .map(frk::end())
           .log_error([] { throw 0; });
