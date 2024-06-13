@@ -61,18 +61,6 @@ static bool is_sPLT(const chunk &c) {
   return type == 'TLPs' && name == pal_name;
 }
 
-static mno::req<chunk_data_t> read_sPLT(chunk_data_t &current,
-                                        yoyo::reader &in) {
-  return read_chunk(in).map(
-      [&](chunk &c) { return traits::move(is_sPLT(c) ? c.data : current); });
-}
-
-static mno::req<chunk_data_t> find_sPLT_in_png(yoyo::reader &in) {
-  return mno::req<chunk_data_t>{}.until_failure(
-      [&in](auto &&res) { return read_sPLT(res, in); },
-      [&in](auto msg) { return !in.eof().unwrap(false); });
-}
-
 chunk_data_t new_sPLT() {
   chunk_data_t res{initial_size};
   res.expand(initial_size);
@@ -166,10 +154,26 @@ int main(int argc, char **argv) try {
 
     case 'i':
       input = val;
-      sPLT = yoyo::file_reader::open(val)
-                 .fmap(frk::assert("PNG"))
-                 .fmap(find_sPLT_in_png)
-                 .log_error([] { throw 0; });
+      yoyo::file_reader::open(val)
+          .fmap(frk::assert("PNG"))
+          .fmap(frk::scan([&](jute::view fourcc, auto r) {
+            if (fourcc != "sPLT")
+              return mno::req{frk::scan_action::take};
+
+            hai::array<char> data{static_cast<unsigned>(r.raw_size())};
+            return r.read(data.begin(), data.size()).map([&] {
+              if (jute::view::unsafe(data.begin()) == pal_name) {
+                sPLT.set_capacity(data.size());
+                sPLT.expand(data.size());
+                for (auto i = 0; i < data.size(); i++) {
+                  sPLT[i] = data[i];
+                }
+              }
+              return frk::scan_action::take;
+            });
+          }))
+          .map(frk::end())
+          .log_error([] { throw 0; });
       break;
     case 'o': {
       yoyo::file_writer::open(val)
