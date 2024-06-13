@@ -1,5 +1,6 @@
 #pragma leco tool
 import gopt;
+import fork;
 import hai;
 import jute;
 import silog;
@@ -31,10 +32,6 @@ Where:
 
 static constexpr const auto pal_name = jute::view{"pixed palette"};
 static constexpr const unsigned initial_size = pal_name.size() + 2;
-
-static bool signature_matches(uint64_t hdr) {
-  return hdr == 0x0A1A0A0D474E5089;
-}
 
 static mno::req<chunk> read_chunk(yoyo::reader &in) {
   chunk res{};
@@ -71,11 +68,9 @@ static mno::req<chunk_data_t> read_sPLT(chunk_data_t &current,
 }
 
 static mno::req<chunk_data_t> find_sPLT_in_png(yoyo::reader &in) {
-  return in.read_u64()
-      .assert(signature_matches, "file signature doesn't match")
-      .map([](auto _signature) { return chunk_data_t{}; })
-      .until_failure([&in](auto &&res) { return read_sPLT(res, in); },
-                     [&in](auto msg) { return !in.eof().unwrap(false); });
+  return mno::req<chunk_data_t>{}.until_failure(
+      [&in](auto &&res) { return read_sPLT(res, in); },
+      [&in](auto msg) { return !in.eof().unwrap(false); });
 }
 
 chunk_data_t new_sPLT() {
@@ -149,15 +144,13 @@ static mno::req<void> pass_chunk(yoyo::reader &in, yoyo::writer &out,
 }
 static mno::req<void> replace_sPLT(yoyo::reader &in, yoyo::writer &out,
                                    const chunk_data_t &sPLT) {
-  return in.read_u64()
-      .assert(signature_matches, "file signature doesn't match")
-      .fmap([&](auto signature) { return out.write(signature); })
-      .until_failure([&] { return pass_chunk(in, out, sPLT); },
-                     [&](auto msg) { return !in.eof().unwrap(false); });
+  return mno::req<void>{}.until_failure(
+      [&] { return pass_chunk(in, out, sPLT); },
+      [&](auto msg) { return !in.eof().unwrap(false); });
 }
 
 int main(int argc, char **argv) try {
-  mno::req<yoyo::file_reader> in{};
+  const char *input{};
   chunk_data_t sPLT{};
   auto opts = gopt_parse(argc, argv, "i:o:rna:", [&](auto ch, auto val) {
     switch (ch) {
@@ -172,15 +165,19 @@ int main(int argc, char **argv) try {
       break;
 
     case 'i':
-      in = yoyo::file_reader::open(val);
-      sPLT = in.fmap(find_sPLT_in_png).log_error([] { throw 0; });
+      input = val;
+      sPLT = yoyo::file_reader::open(val)
+                 .fmap(frk::assert("PNG"))
+                 .fmap(find_sPLT_in_png)
+                 .log_error([] { throw 0; });
       break;
     case 'o': {
-      in.fmap([](auto &in) { return in.seekg(0, yoyo::seek_mode::set); })
-          .fmap([&] { return yoyo::file_writer::open(val); })
+      yoyo::file_writer::open(val)
+          .fmap(frk::signature("PNG"))
           .fmap([&](auto &out) {
-            return in.fmap(
-                [&](auto &in) { return replace_sPLT(in, out, sPLT); });
+            return yoyo::file_reader::open(input)
+                .fmap(frk::assert("PNG"))
+                .fmap([&](auto &in) { return replace_sPLT(in, out, sPLT); });
           })
           .log_error([] { throw 0; });
       break;
