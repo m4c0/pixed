@@ -8,7 +8,7 @@ import traits;
 import yoyo;
 
 using namespace traits::ints;
-using chunk_data_t = hai::varray<uint8_t>;
+using chunk_data_t = hai::varray<char>;
 
 struct chunk {
   uint32_t type;
@@ -57,7 +57,7 @@ static mno::req<chunk> read_chunk(yoyo::reader &in) {
 
 static bool is_sPLT(const chunk &c) {
   auto &[type, data, crc] = c;
-  auto name = jute::view::unsafe(reinterpret_cast<const char *>(data.begin()));
+  auto name = jute::view::unsafe(data.begin());
   return type == 'TLPs' && name == pal_name;
 }
 
@@ -65,7 +65,7 @@ chunk_data_t new_sPLT() {
   chunk_data_t res{initial_size};
   res.expand(initial_size);
 
-  char *buf = reinterpret_cast<char *>(res.begin());
+  char *buf = res.begin();
   for (auto c : pal_name)
     *buf++ = c;
 
@@ -165,8 +165,7 @@ int main(int argc, char **argv) try {
             data.expand(r.raw_size());
             return r.read(data.begin(), data.size())
                 .map([&] {
-                  if (jute::view::unsafe(
-                          reinterpret_cast<char *>(data.begin())) != pal_name)
+                  if (jute::view::unsafe(data.begin()) != pal_name)
                     return;
 
                   sPLT = traits::move(data);
@@ -203,8 +202,8 @@ int main(int argc, char **argv) try {
     silog::log(silog::info, "Palette size: %d", count);
     auto c = sPLT.begin() + initial_size;
     for (auto i = 0; i < count; i++, c += 6) {
-      silog::log(silog::info, "- Colour %3d: %02x%02x%02x%02x", i + 1, c[0],
-                 c[1], c[2], c[3]);
+      silog::log(silog::info, "- Colour %3d: %02x%02x%02x%02x", i + 1,
+                 c[0] & 0xFF, c[1] & 0xFF, c[2] & 0xFF, c[3] & 0xFF);
     }
   }
 
