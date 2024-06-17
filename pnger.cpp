@@ -177,6 +177,12 @@ int main(int argc, char **argv) try {
             return yoyo::file_reader::open(input)
                 .fmap(frk::assert("PNG"))
                 .fmap(frk::copy::chunk("IHDR", val))
+                .fmap([&](auto &&r) {
+                  return yoyo::file_writer::append(val)
+                      .fmap(frk::chunk("sPLT", sPLT.begin(), sPLT.size()))
+                      .map(frk::end())
+                      .map([&] { return traits::move(r); });
+                })
                 .fmap(frk::copy::chunk("IDAT", val))
                 .fmap(frk::copy::chunk("IEND", val))
                 .map(frk::end())
