@@ -130,16 +130,11 @@ static mno::req<void> pass_chunk(yoyo::reader &in, yoyo::writer &out,
     return write_chunk(out, c.type, c.data, c.crc);
   });
 }
-static mno::req<void> replace_sPLT(yoyo::reader &in, yoyo::writer &out,
-                                   const chunk_data_t &sPLT) {
-  return mno::req<void>{}.until_failure(
-      [&] { return pass_chunk(in, out, sPLT); },
-      [&](auto msg) { return !in.eof().unwrap(false); });
-}
 
 int main(int argc, char **argv) try {
   const char *input{};
   chunk_data_t sPLT{};
+
   auto opts = gopt_parse(argc, argv, "i:o:rna:", [&](auto ch, auto val) {
     switch (ch) {
     case 'a':
@@ -173,16 +168,40 @@ int main(int argc, char **argv) try {
           .fmap(frk::take("IDAT"))
           .fmap(frk::take("IEND"))
           .map(frk::end())
+          .trace("reading palette from input file")
           .log_error([] { throw 0; });
       break;
     case 'o': {
-      yoyo::file_writer::open(val)
-          .fmap(frk::signature("PNG"))
-          .fmap([&](auto &out) {
+      const auto copy = [](auto &fourcc, auto val) {
+        return frk::take(fourcc, [&](yoyo::subreader r) {
+          if (r.raw_size() == 0) {
+            return yoyo::file_writer::append(val)
+                .fmap(frk::chunk(fourcc))
+                .map(frk::end());
+          }
+          hai::array<char> data{static_cast<unsigned>(r.raw_size())};
+          return r.read(data.begin(), data.size())
+              .fmap([&] { return yoyo::file_writer::append(val); })
+              .fmap(frk::chunk(fourcc, data.begin(), data.size()))
+              .map(frk::end());
+        });
+      };
+      const auto create = [&] {
+        return yoyo::file_writer::open(val)
+            .fmap(frk::signature("PNG"))
+            .map(frk::end());
+      };
+      create()
+          .fmap([&] {
             return yoyo::file_reader::open(input)
                 .fmap(frk::assert("PNG"))
-                .fmap([&](auto &in) { return replace_sPLT(in, out, sPLT); });
+                .fmap(copy("IHDR", val))
+                .fmap(copy("IDAT", val))
+                .fmap(copy("IEND", val))
+                .map(frk::end())
+                .trace("writing output file");
           })
+          .trace("copying chunks from input file")
           .log_error([] { throw 0; });
       break;
     }
