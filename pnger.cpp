@@ -33,34 +33,6 @@ Where:
 static constexpr const auto pal_name = jute::view{"pixed palette"};
 static constexpr const unsigned initial_size = pal_name.size() + 2;
 
-static mno::req<chunk> read_chunk(yoyo::reader &in) {
-  chunk res{};
-  return in.read_u32_be()
-      .fmap([&](auto l) {
-        res.data.set_capacity(l);
-        res.data.expand(l);
-        return in.read_u32();
-      })
-      .fmap([&](auto t) {
-        res.type = t;
-        if (res.data.size() == 0)
-          return mno::req<void>{};
-
-        return in.read(res.data.begin(), res.data.size());
-      })
-      .fmap([&] { return in.read_u32(); })
-      .map([&](auto crc) {
-        res.crc = crc;
-        return traits::move(res);
-      });
-}
-
-static bool is_sPLT(const chunk &c) {
-  auto &[type, data, crc] = c;
-  auto name = jute::view::unsafe(data.begin());
-  return type == 'TLPs' && name == pal_name;
-}
-
 chunk_data_t new_sPLT() {
   chunk_data_t res{initial_size};
   res.expand(initial_size);
@@ -102,33 +74,6 @@ void append_sPLT(chunk_data_t &sPLT, const char *val) {
   // Frequency - zero'd since this is a pseudo-palette
   sPLT.push_back_doubling(0);
   sPLT.push_back_doubling(0);
-}
-
-static mno::req<void> write_chunk(yoyo::writer &out, uint32_t type,
-                                  const chunk_data_t &data, uint32_t crc) {
-  return out.write_u32_be(data.size())
-      .fmap([&] { return out.write_u32(type); })
-      .fmap([&] {
-        if (data.size() == 0)
-          return mno::req<void>{};
-        return out.write(data.begin(), data.size());
-      })
-      .fmap([&] { return out.write_u32(crc); });
-}
-
-static mno::req<void> pass_chunk(yoyo::reader &in, yoyo::writer &out,
-                                 const chunk_data_t &sPLT) {
-  return read_chunk(in).fmap([&](chunk &c) {
-    if (is_sPLT(c))
-      return mno::req<void>{};
-
-    if (c.type == 'TADI' && sPLT.size() > 0)
-      return write_chunk(out, 'TLPs', sPLT, 0).fmap([&] {
-        return write_chunk(out, c.type, c.data, c.crc);
-      });
-
-    return write_chunk(out, c.type, c.data, c.crc);
-  });
 }
 
 int main(int argc, char **argv) try {
