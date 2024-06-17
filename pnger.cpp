@@ -156,22 +156,22 @@ int main(int argc, char **argv) try {
       input = val;
       yoyo::file_reader::open(val)
           .fmap(frk::assert("PNG"))
-          .fmap(frk::scan([&](jute::view fourcc, auto r) {
-            if (fourcc != "sPLT")
-              return mno::req{frk::scan_action::take};
+          .fmap(frk::take("IHDR"))
+          .fmap(frk::take("sPLT",
+                          [&](yoyo::subreader r) {
+                            chunk_data_t data{
+                                static_cast<unsigned>(r.raw_size())};
+                            data.set_capacity(r.raw_size());
+                            data.expand(r.raw_size());
+                            return r.read(data.begin(), data.size()).map([&] {
+                              if (jute::view::unsafe(data.begin()) != pal_name)
+                                return;
 
-            chunk_data_t data{static_cast<unsigned>(r.raw_size())};
-            data.set_capacity(r.raw_size());
-            data.expand(r.raw_size());
-            return r.read(data.begin(), data.size())
-                .map([&] {
-                  if (jute::view::unsafe(data.begin()) != pal_name)
-                    return;
-
-                  sPLT = traits::move(data);
-                })
-                .map([] { return frk::scan_action::take; });
-          }))
+                              sPLT = traits::move(data);
+                            });
+                          }))
+          .fmap(frk::take("IDAT"))
+          .fmap(frk::take("IEND"))
           .map(frk::end())
           .log_error([] { throw 0; });
       break;
