@@ -2,9 +2,13 @@
 
 import flate;
 import fork;
+import hai;
 import silog;
+import stubby;
 import traits;
 import yoyo;
+
+using namespace traits::ints;
 
 static constexpr auto ihdr(int &w, int &h) {
   return [&](yoyo::subreader r) {
@@ -18,6 +22,7 @@ static constexpr auto ihdr(int &w, int &h) {
 
 static constexpr auto deflate(const int &w, const int &h) {
   return [&](yoyo::subreader r) {
+    hai::array<uint8_t> data{static_cast<unsigned>(w * h * 4)};
     flate::bitstream b{&r};
     return r.read_u16()
         .assert([](auto cmf_flg) { return cmf_flg == 0x0178; },
@@ -37,6 +42,10 @@ static constexpr auto deflate(const int &w, const int &h) {
             });
           }
           return res;
+        })
+        .map([&] {
+          auto d = reinterpret_cast<stbi::pixel *>(data.begin());
+          stbi::write_rgba_unsafe("out/test.png", w, h, d);
         });
   };
 }
