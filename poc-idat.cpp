@@ -15,11 +15,12 @@ mno::req<void> ihdr(yoyo::subreader r) {
 
 mno::req<void> deflate(yoyo::subreader r) {
   unsigned count{};
-
-  r.seekg(2).take([](auto err) { throw 0; });
-
   flate::bitstream b{&r};
-  return flate::huffman_reader::create(&b)
+
+  return r.read_u16()
+      .assert([](auto cmf_flg) { return cmf_flg == 0x0178; },
+              "only 32k window deflate is supported")
+      .fmap([&](auto) { return flate::huffman_reader::create(&b); })
       .until_failure(
           [&](auto &hr) {
             return hr.read_u8().map([&](auto r) {
