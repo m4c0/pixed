@@ -20,19 +20,23 @@ static constexpr auto ihdr(int &w, int &h) {
   };
 }
 
-static constexpr auto run_filter(hai::array<uint8_t> &data, int filter,
-                                 unsigned y) {
+static constexpr auto run_filter(uint8_t *data, int filter, unsigned y, int w) {
   switch (filter) {
   case 0:
     return mno::req<void>{};
   case 1:
-    // TODO: implement
+    for (auto x = 4; x < w * 4; x++) {
+      data[x] += data[x - 4];
+    }
     return mno::req<void>{};
   case 2:
     // TODO: implement
     if (y == 0)
       return mno::req<void>::failed("'up' filter at top row");
 
+    for (auto x = 0; x < w * 4; x++) {
+      data[x] += data[x - w * 4];
+    }
     return mno::req<void>{};
   case 3:
     return mno::req<void>::failed("average filter not supported");
@@ -57,7 +61,7 @@ static constexpr auto deflate(const int &w, const int &h) {
             res = hr.read_u8().fmap([&](auto filter) {
               uint8_t *ptr = data.begin() + y * w * 4;
               return hr.read(ptr, w * 4).fmap([&] {
-                return run_filter(data, filter, y);
+                return run_filter(ptr, filter, y, w);
               });
             });
           }
