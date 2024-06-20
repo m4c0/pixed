@@ -55,11 +55,10 @@ static constexpr auto deflate(const int &w, const int &h) {
           mno::req<void> res{};
           for (auto y = 0; y < h && res.is_valid(); y++) {
             res = hr.read_u8().fmap([&](auto filter) {
-              mno::req<void> res{};
-              for (auto x = 0; x < w * 4 && res.is_valid(); x++) {
-                res = hr.read_u8().map([](auto) {});
-              }
-              return res.fmap([&] { return run_filter(data, filter, y); });
+              uint8_t *ptr = data.begin() + y * w * 4;
+              return hr.read(ptr, w * 4).fmap([&] {
+                return run_filter(data, filter, y);
+              });
             });
           }
           return res;
