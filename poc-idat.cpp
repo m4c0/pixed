@@ -15,7 +15,23 @@ static constexpr auto ihdr(int &w, int &h) {
     return r.read_u32_be()
         .map([&](auto n) { w = n; })
         .fmap([&] { return r.read_u32_be(); })
-        .map([&](auto n) { h = n; });
+        .map([&](auto n) { h = n; })
+        .fmap([&] { return r.read_u8(); })
+        .assert([](auto bit_depth) { return bit_depth == 8; },
+                "unsupported bitdepth")
+        .fmap([&](auto) { return r.read_u8(); })
+        .assert([](auto colour_type) { return colour_type == 6; },
+                "unsupported colour type")
+        .fmap([&](auto) { return r.read_u8(); })
+        .assert([](auto compression) { return compression == 0; },
+                "unsupported compression")
+        .fmap([&](auto) { return r.read_u8(); })
+        .assert([](auto filter) { return filter == 0; }, "unsupported filter")
+        .fmap([&](auto) { return r.read_u8(); })
+        .assert([](auto interlace) { return interlace == 0; },
+                "unsupported interlace")
+        .map(
+            [&](auto) { silog::log(silog::debug, "found %dx%d image", w, h); });
     // TODO: assert format, etc
   };
 }
@@ -60,9 +76,9 @@ static constexpr auto deflate(const int &w, const int &h) {
           for (auto y = 0; y < h && res.is_valid(); y++) {
             res = hr.read_u8().fmap([&](auto filter) {
               uint8_t *ptr = data.begin() + y * w * 4;
-              return hr.read(ptr, w * 4).fmap([&] {
-                return run_filter(ptr, filter, y, w);
-              });
+              return hr.read(ptr, w * 4)
+                  .fmap([&] { return run_filter(ptr, filter, y, w); })
+                  .trace("reading scanline");
             });
           }
           return res;
