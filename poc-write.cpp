@@ -5,7 +5,7 @@ import yoyo;
 
 using namespace traits::ints;
 
-static constexpr const auto w = 16;
+static constexpr const auto w = 32;
 static constexpr const auto h = 16;
 
 #pragma pack(push, 1)
@@ -42,6 +42,7 @@ static constexpr auto adler(uint8_t *data, unsigned len) {
   return (s2 << 16) + s1;
 }
 
+// TODO: support IDAT split at 16k
 int main() {
   idat i{};
   auto *sl = i.pixels;
