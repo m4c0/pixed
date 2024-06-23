@@ -5,17 +5,20 @@ import yoyo;
 
 using namespace traits::ints;
 
+static constexpr const auto w = 16;
+static constexpr const auto h = 16;
+
 #pragma pack(push, 1)
 struct ihdr {
-  uint32_t width = yoyo::flip32(16);
-  uint32_t height = yoyo::flip32(16);
+  uint32_t width = yoyo::flip32(w);
+  uint32_t height = yoyo::flip32(h);
   uint8_t bit_depth = 8;
   uint8_t colour_type = 6; // RGBA
   uint8_t compression = 0; // Deflate
   uint8_t filter = 0;
   uint8_t interlace = 0;
 };
-static constexpr const auto img_len = 4 * 16 * (16 + 1);
+static constexpr const auto img_len = 4 * h * (w + 1);
 struct idat {
   uint8_t cmf = 0x78;
   uint8_t flg = 0x01;
@@ -42,12 +45,12 @@ static constexpr auto adler(uint8_t *data, unsigned len) {
 int main() {
   idat i{};
   auto *sl = i.pixels;
-  for (auto y = 0; y < 16; y++) {
+  for (auto y = 0; y < h; y++) {
     *sl++ = 0; // filter 0
-    for (auto x = 0; x < 16; x++, sl += 4) {
+    for (auto x = 0; x < w; x++, sl += 4) {
       sl[0] = sl[3] = 0xFF;
-      sl[1] = x * 16;
-      sl[2] = y * 16;
+      sl[1] = 256 * x / w;
+      sl[2] = 256 * y / h;
     }
   }
   i.adler = yoyo::flip32(adler(i.pixels, sizeof(i.pixels)));
