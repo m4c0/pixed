@@ -22,7 +22,7 @@ struct idat {
   uint8_t bhead = 1; // No compression, final block
   uint16_t len = yoyo::flip16(img_len);
   uint16_t nlen = yoyo::flip16(~img_len);
-  uint8_t pixels[img_len];
+  uint8_t pixels[img_len]{};
   uint32_t adler{};
 };
 #pragma pack(pop)
