@@ -10,6 +10,12 @@ import yoyo;
 
 using namespace traits::ints;
 
+struct png {
+  int w;
+  int h;
+  hai::varray<uint8_t> data{};
+};
+
 static constexpr auto ihdr(int &w, int &h) {
   return [&](yoyo::subreader r) {
     return r.read_u32_be()
@@ -32,7 +38,6 @@ static constexpr auto ihdr(int &w, int &h) {
                 "unsupported interlace")
         .map(
             [&](auto) { silog::log(silog::debug, "found %dx%d image", w, h); });
-    // TODO: assert format, etc
   };
 }
 
@@ -90,14 +95,22 @@ static constexpr auto deflate(const int &w, const int &h) {
   };
 }
 
+static constexpr auto idat(hai::varray<uint8_t> &data) {
+  return [&](yoyo::subreader r) {
+    auto size = data.size() + r.raw_size();
+    data.set_capacity(size);
+    return r.read(data.end(), r.raw_size()).map([&] { data.expand(size); });
+  };
+}
+
 int main() {
-  int w;
-  int h;
+  png img{};
   yoyo::file_reader::open("blank.png")
       .fmap(frk::assert("PNG"))
-      .fmap(frk::take("IHDR", ihdr(w, h)))
-      .fmap(frk::take("IDAT", deflate(w, h)))
+      .fmap(frk::take("IHDR", ihdr(img.w, img.h)))
+      .fmap(frk::take_all("IDAT", idat(img.data)))
       .fmap(frk::take("IEND"))
       .map(frk::end())
+      .map([&] { silog::log(silog::debug, "%ld", img.data.size()); })
       .log_error([] { throw 0; });
 }
