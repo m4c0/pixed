@@ -33,7 +33,7 @@ static constexpr auto adler(uint8_t *data, unsigned len) {
   uint32_t s1 = 1;
   uint32_t s2 = 0;
   for (auto i = 0; i < len; i++) {
-    s1 = (s1 + data[len]) % base;
+    s1 = (s1 + data[i]) % base;
     s2 = (s2 + s1) % base;
   }
   return (s2 << 16) + s1;
