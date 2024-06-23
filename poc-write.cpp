@@ -41,6 +41,15 @@ static constexpr auto adler(uint8_t *data, unsigned len) {
 
 int main() {
   idat i{};
+  auto *sl = i.pixels;
+  for (auto y = 0; y < 16; y++) {
+    *sl++ = 0; // filter 0
+    for (auto x = 0; x < 16; x++, sl += 4) {
+      sl[0] = sl[3] = 0xFF;
+      sl[1] = x * 16;
+      sl[2] = y * 16;
+    }
+  }
   i.adler = yoyo::flip32(adler(i.pixels, sizeof(i.pixels)));
 
   return yoyo::file_writer::open("out/test.png")
