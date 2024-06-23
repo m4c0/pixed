@@ -41,7 +41,7 @@ static constexpr auto adler(uint8_t *data, unsigned len) {
 
 int main() {
   idat i{};
-  i.adler = adler(i.pixels, sizeof(i.pixels));
+  i.adler = yoyo::flip32(adler(i.pixels, sizeof(i.pixels)));
 
   return yoyo::file_writer::open("out/test.png")
       .fmap(frk::signature("PNG"))
