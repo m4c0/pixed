@@ -11,12 +11,12 @@ import yoyo;
 using namespace traits::ints;
 
 struct png {
-  int w;
-  int h;
+  unsigned w;
+  unsigned h;
   hai::varray<uint8_t> data{};
 };
 
-static constexpr auto ihdr(int &w, int &h) {
+static constexpr auto ihdr(unsigned &w, unsigned &h) {
   return [&](yoyo::subreader r) {
     return r.read_u32_be()
         .map([&](auto n) { w = n; })
@@ -41,7 +41,8 @@ static constexpr auto ihdr(int &w, int &h) {
   };
 }
 
-static constexpr auto run_filter(uint8_t *data, int filter, unsigned y, int w) {
+static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
+  auto data = static_cast<uint8_t *>(d);
   switch (filter) {
   case 0:
     return mno::req<void>{};
@@ -68,21 +69,22 @@ static constexpr auto run_filter(uint8_t *data, int filter, unsigned y, int w) {
   }
 }
 
-static constexpr auto deflate(const int &w, const int &h) {
-  return [&](yoyo::subreader r) {
-    hai::array<uint8_t> data{static_cast<unsigned>(w * h * 4)};
+static constexpr auto deflate(const png &img) {
+  return [&] {
+    if (img.data[0] != 0x78 && img.data[1] != 0x01)
+      return mno::req<void>::failed("only 32k window deflate is supported");
+
+    hai::array<stbi::pixel> data{img.w * img.h};
+    yoyo::memreader r{img.data.begin() + 2, img.data.size() - 2};
     flate::bitstream b{&r};
-    return r.read_u16()
-        .assert([](auto cmf_flg) { return cmf_flg == 0x0178; },
-                "only 32k window deflate is supported")
-        .fmap([&](auto) { return flate::huffman_reader::create(&b); })
+    return flate::huffman_reader::create(&b)
         .fmap([&](auto &hr) {
           mno::req<void> res{};
-          for (auto y = 0; y < h && res.is_valid(); y++) {
+          for (auto y = 0; y < img.h && res.is_valid(); y++) {
             res = hr.read_u8().fmap([&](auto filter) {
-              uint8_t *ptr = data.begin() + y * w * 4;
-              return hr.read(ptr, w * 4)
-                  .fmap([&] { return run_filter(ptr, filter, y, w); })
+              void *ptr = data.begin() + y * img.w;
+              return hr.read(ptr, img.w * 4)
+                  .fmap([&] { return run_filter(ptr, filter, y, img.w); })
                   .trace("reading scanline");
             });
           }
@@ -90,7 +92,7 @@ static constexpr auto deflate(const int &w, const int &h) {
         })
         .map([&] {
           auto d = reinterpret_cast<stbi::pixel *>(data.begin());
-          stbi::write_rgba_unsafe("out/test.png", w, h, d);
+          stbi::write_rgba_unsafe("out/test.png", img.w, img.h, d);
         });
   };
 }
@@ -111,6 +113,6 @@ int main() {
       .fmap(frk::take_all("IDAT", idat(img.data)))
       .fmap(frk::take("IEND"))
       .map(frk::end())
-      .map([&] { silog::log(silog::debug, "%ld", img.data.size()); })
+      .fmap(deflate(img))
       .log_error([] { throw 0; });
 }
