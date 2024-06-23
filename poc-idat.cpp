@@ -63,6 +63,9 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
     if (y == 0)
       return mno::req<void>{};
 
+    for (auto x = 0; x < 4; x++) {
+      data[x] = data[x - w * 4];
+    }
     for (auto x = 4; x < w * 4; x++) {
       data[x] += (data[x - 4] + data[x - w * 4]) / 2;
     }
