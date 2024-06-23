@@ -7,8 +7,8 @@ using namespace traits::ints;
 
 #pragma pack(push, 1)
 struct ihdr {
-  uint32_t width = yoyo::flip16(16);
-  uint32_t height = yoyo::flip16(16);
+  uint32_t width = yoyo::flip32(16);
+  uint32_t height = yoyo::flip32(16);
   uint8_t bit_depth = 8;
   uint8_t colour_type = 6; // RGBA
   uint8_t compression = 0; // Deflate
