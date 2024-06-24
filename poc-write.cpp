@@ -1,5 +1,6 @@
 #pragma leco tool
 import fork;
+import hai;
 import traits;
 import yoyo;
 
@@ -19,19 +20,6 @@ struct ihdr {
       : width{yoyo::flip32(w)}
       , height{yoyo::flip32(h)} {}
 };
-
-static constexpr const auto w = 32;
-static constexpr const auto h = 16;
-static constexpr const auto img_len = 4 * h * (w + 1);
-struct idat {
-  uint8_t cmf = 0x78;
-  uint8_t flg = 0x01;
-  uint8_t bhead = 1; // No compression, final block
-  uint16_t len = yoyo::flip16(img_len);
-  uint16_t nlen = yoyo::flip16(~img_len);
-  uint8_t pixels[img_len]{};
-  uint32_t adler{};
-};
 #pragma pack(pop)
 static_assert(sizeof(ihdr) == 13);
 
@@ -48,8 +36,12 @@ static constexpr auto adler(uint8_t *data, unsigned len) {
 
 // TODO: support IDAT split at 16k
 int main() {
-  idat i{};
-  auto *sl = i.pixels;
+  static constexpr const auto w = 32;
+  static constexpr const auto h = 16;
+  static constexpr const auto img_len = 4 * h * (w + 1);
+
+  hai::array<uint8_t> pixels{img_len};
+  auto *sl = pixels.begin();
   for (auto y = 0; y < h; y++) {
     *sl++ = 0; // filter 0
     for (auto x = 0; x < w; x++, sl += 4) {
@@ -58,12 +50,25 @@ int main() {
       sl[2] = 256 * y / h;
     }
   }
-  i.adler = yoyo::flip32(adler(i.pixels, sizeof(i.pixels)));
 
-  return yoyo::file_writer::open("out/test.png")
+  hai::array<uint8_t> buf{1 << 13};
+  unsigned len{};
+  return mno::req{yoyo::memwriter{buf}}
+      .fpeek([](auto &w) { return w.write_u8(0x78); })      // CMF
+      .fpeek([](auto &w) { return w.write_u8(0x01); })      // FLG
+      .fpeek([](auto &w) { return w.write_u8(1); })         // BHEAD
+      .fpeek([](auto &w) { return w.write_u16(img_len); })  // LEN
+      .fpeek([](auto &w) { return w.write_u16(~img_len); }) // NLEN
+      .fpeek([&](auto &w) { return w.write(pixels.begin(), pixels.size()); })
+      .fpeek([&](auto &w) {
+        return w.write_u32_be(adler(pixels.begin(), pixels.size()));
+      })
+      .fmap([&](auto &w) { return w.tellp(); })
+      .map([&](auto l) { len = l; })
+      .fmap([] { return yoyo::file_writer::open("out/test.png"); })
       .fmap(frk::signature("PNG"))
       .fmap(frk::chunk("IHDR", ihdr{w, h}))
-      .fmap(frk::chunk("IDAT", i))
+      .fmap(frk::chunk("IDAT", buf.begin(), buf.size()))
       .fmap(frk::chunk("IEND"))
       .map(frk::end())
       .map([] { return 0; })
