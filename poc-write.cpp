@@ -5,19 +5,23 @@ import yoyo;
 
 using namespace traits::ints;
 
-static constexpr const auto w = 32;
-static constexpr const auto h = 16;
-
 #pragma pack(push, 1)
 struct ihdr {
-  uint32_t width = yoyo::flip32(w);
-  uint32_t height = yoyo::flip32(h);
+  uint32_t width;
+  uint32_t height;
   uint8_t bit_depth = 8;
   uint8_t colour_type = 6; // RGBA
   uint8_t compression = 0; // Deflate
   uint8_t filter = 0;
   uint8_t interlace = 0;
+
+  ihdr(uint32_t w, uint32_t h)
+      : width{yoyo::flip32(w)}
+      , height{yoyo::flip32(h)} {}
 };
+
+static constexpr const auto w = 32;
+static constexpr const auto h = 16;
 static constexpr const auto img_len = 4 * h * (w + 1);
 struct idat {
   uint8_t cmf = 0x78;
@@ -58,7 +62,7 @@ int main() {
 
   return yoyo::file_writer::open("out/test.png")
       .fmap(frk::signature("PNG"))
-      .fmap(frk::chunk("IHDR", ihdr{}))
+      .fmap(frk::chunk("IHDR", ihdr{w, h}))
       .fmap(frk::chunk("IDAT", i))
       .fmap(frk::chunk("IEND"))
       .map(frk::end())
