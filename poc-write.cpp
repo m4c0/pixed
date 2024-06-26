@@ -40,20 +40,23 @@ static constexpr auto write_u8(uint8_t n) {
 static constexpr auto write_u16(uint16_t n) {
   return [=](auto &w) { return w.write_u16(n); };
 }
-static constexpr auto write(const void *data, unsigned sz) {
-  return [=](auto &w) { return w.write(data, sz); };
-}
 static constexpr auto write_u32_be(uint16_t n) {
   return [=](auto &w) { return w.write_u32_be(n); };
+}
+static constexpr auto seek(int n, yoyo::seek_mode m) {
+  return [=](auto &w) { return w.seekp(n, m); };
 }
 
 int main() {
   static constexpr const auto w = 32;
   static constexpr const auto h = 16;
   static constexpr const auto img_len = 4 * h * (w + 1);
+  static constexpr const auto idat_hdr = 7;
+  static constexpr const auto idat_ftr = 4;
+  static constexpr const auto buf_len = img_len + idat_hdr + idat_ftr;
 
-  hai::array<uint8_t> pixels{img_len};
-  auto *sl = pixels.begin();
+  hai::array<uint8_t> buf{buf_len};
+  auto *sl = buf.begin() + idat_hdr;
   for (auto y = 0; y < h; y++) {
     *sl++ = 0; // filter 0
     for (auto x = 0; x < w; x++, sl += 4) {
@@ -63,19 +66,17 @@ int main() {
     }
   }
 
-  hai::array<uint8_t> buf{1 << 13};
-  unsigned len{};
-  return mno::req{yoyo::memwriter{buf}}
-      .fpeek(write_u8(0x78))      // CMF
-      .fpeek(write_u8(0x01))      // FLG
-      .fpeek(write_u8(1))         // BHEAD
-      .fpeek(write_u16(img_len))  // LEN
-      .fpeek(write_u16(~img_len)) // NLEN
-      .fpeek(write(pixels.begin(), pixels.size()))
-      .fpeek(write_u32_be(adler(pixels.begin(), pixels.size())))
-      .fmap([&](auto &w) { return w.tellp(); })
-      .map([&](auto l) { len = l; })
-      .fmap([] { return yoyo::file_writer::open("out/test.png"); })
+  auto res = mno::req{yoyo::memwriter{buf}}
+                 .fpeek(write_u8(0x78))      // CMF
+                 .fpeek(write_u8(0x1))       // FLG
+                 .fpeek(write_u8(1))         // BHEAD
+                 .fpeek(write_u16(img_len))  // LEN
+                 .fpeek(write_u16(~img_len)) // NLEN
+                 .fpeek(seek(img_len, yoyo::seek_mode::current))
+                 .fmap(write_u32_be(adler(buf.begin(), buf.size())));
+
+  hai::array<uint8_t> buf2{1 << 13};
+  return res.fmap([] { return yoyo::file_writer::open("out/test.png"); })
       .fmap(frk::signature("PNG"))
       .fmap(frk::chunk("IHDR", ihdr{w, h}))
       .fmap(frk::chunk("IDAT", buf.begin(), buf.size()))
