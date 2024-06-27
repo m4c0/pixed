@@ -95,23 +95,23 @@ int main(int argc, char **argv) try {
     case 'i':
       input = val;
       yoyo::file_reader::open(val)
-          .fmap(frk::assert("PNG"))
-          .fmap(frk::take("IHDR"))
-          .fmap(frk::take("sPLT",
-                          [&](yoyo::subreader r) {
-                            chunk_data_t data{
-                                static_cast<unsigned>(r.raw_size())};
-                            data.set_capacity(r.raw_size());
-                            data.expand(r.raw_size());
-                            return r.read(data.begin(), data.size()).map([&] {
-                              if (jute::view::unsafe(data.begin()) != pal_name)
-                                return;
+          .fpeek(frk::assert("PNG"))
+          .fpeek(frk::take("IHDR"))
+          .fpeek(frk::take("sPLT",
+                           [&](yoyo::subreader r) {
+                             chunk_data_t data{
+                                 static_cast<unsigned>(r.raw_size())};
+                             data.set_capacity(r.raw_size());
+                             data.expand(r.raw_size());
+                             return r.read(data.begin(), data.size()).map([&] {
+                               if (jute::view::unsafe(data.begin()) != pal_name)
+                                 return;
 
-                              sPLT = traits::move(data);
-                            });
-                          }))
-          .fmap(frk::take("IDAT"))
-          .fmap(frk::take("IEND"))
+                               sPLT = traits::move(data);
+                             });
+                           }))
+          .fpeek(frk::take("IDAT"))
+          .fpeek(frk::take("IEND"))
           .map(frk::end())
           .trace("reading palette from input file")
           .log_error([] { throw 0; });
@@ -120,16 +120,15 @@ int main(int argc, char **argv) try {
       frk::copy::start("PNG", val)
           .fmap([&] {
             return yoyo::file_reader::open(input)
-                .fmap(frk::assert("PNG"))
-                .fmap(frk::copy::chunk("IHDR", val))
-                .fmap([&](auto &&r) {
+                .fpeek(frk::assert("PNG"))
+                .fpeek(frk::copy::chunk("IHDR", val))
+                .fpeek([&](auto &&r) {
                   return yoyo::file_writer::append(val)
-                      .fmap(frk::chunk("sPLT", sPLT.begin(), sPLT.size()))
-                      .map(frk::end())
-                      .map([&] { return traits::move(r); });
+                      .fpeek(frk::chunk("sPLT", sPLT.begin(), sPLT.size()))
+                      .map(frk::end());
                 })
-                .fmap(frk::copy::chunk("IDAT", val))
-                .fmap(frk::copy::chunk("IEND", val))
+                .fpeek(frk::copy::chunk("IDAT", val))
+                .fpeek(frk::copy::chunk("IEND", val))
                 .map(frk::end())
                 .trace("writing output file");
           })

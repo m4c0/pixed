@@ -116,10 +116,10 @@ static constexpr auto idat(hai::varray<uint8_t> &data) {
 int main() {
   png img{};
   yoyo::file_reader::open("blank.png")
-      .fmap(frk::assert("PNG"))
-      .fmap(frk::take("IHDR", ihdr(img.w, img.h)))
-      .fmap(frk::take_all("IDAT", idat(img.data)))
-      .fmap(frk::take("IEND"))
+      .fpeek(frk::assert("PNG"))
+      .fpeek(frk::take("IHDR", ihdr(img.w, img.h)))
+      .fpeek(frk::take_all("IDAT", idat(img.data)))
+      .fpeek(frk::take("IEND"))
       .map(frk::end())
       .fmap(deflate(img))
       .log_error([] { throw 0; });
