@@ -52,10 +52,6 @@ static constexpr auto spliterate_idat(const uint8_t *img, unsigned size) {
                  len = min(w.raw_size() - w.raw_pos() - 5, size);
                  bhead = len == size;
                })
-                .peek([&](auto &) {
-                  silog::log(silog::debug, "%p %d l=%x b=%d", img, size, len,
-                             bhead);
-                })
                 .fpeek(yoyo::write_u8(bhead))
                 .fpeek(yoyo::write_u16(len))
                 .fpeek(yoyo::write_u16(~len))
@@ -85,6 +81,7 @@ int main() {
   hai::array<uint8_t> buf{img_len};
   auto *sl = buf.begin();
   for (auto y = 0; y < h; y++) {
+    // TODO: other filters
     // TODO: remove filter
     *sl++ = 0; // filter 0
     for (auto x = 0; x < w; x++, sl += 4) {
