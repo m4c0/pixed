@@ -73,23 +73,35 @@ static constexpr auto spliterate_idat(const uint8_t *img, unsigned size) {
   };
 }
 
+static hai::array<uint8_t> filter(const uint8_t *img, unsigned w, unsigned h) {
+  hai::array<uint8_t> res{(w * 4 + 1) * h};
+  auto *sl = res.begin();
+  for (auto y = 0; y < h; y++) {
+    // TODO: other filters
+    *sl++ = 0; // filter 0
+    for (auto x = 0; x < w * 4; x++) {
+      *sl++ = *img++;
+    }
+  }
+  return res;
+}
+
 int main() {
   static constexpr const auto w = 1024;
   static constexpr const auto h = 1024;
-  static constexpr const auto img_len = 4 * h * (w + 1);
+  static constexpr const auto img_len = 4 * h * w;
 
-  hai::array<uint8_t> buf{img_len};
-  auto *sl = buf.begin();
+  hai::array<uint8_t> img{img_len};
+  auto *sl = img.begin();
   for (auto y = 0; y < h; y++) {
-    // TODO: other filters
-    // TODO: remove filter
-    *sl++ = 0; // filter 0
     for (auto x = 0; x < w; x++, sl += 4) {
       sl[0] = sl[3] = 0xFF;
       sl[1] = 256 * x / w;
       sl[2] = 256 * y / h;
     }
   }
+
+  auto buf = filter(img.begin(), w, h);
 
   return yoyo::file_writer::open("out/test.png")
       .fpeek(frk::signature("PNG"))
