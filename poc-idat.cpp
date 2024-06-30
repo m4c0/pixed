@@ -80,13 +80,13 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
 
 static constexpr auto deflate(const dec_ctx &img) {
   return [&] {
-    if (img.compress[0] != 0x78 && img.compress[1] != 0x01)
-      return mno::req<void>::failed("only 32k window deflate is supported");
-
     hai::array<stbi::pixel> data{img.w * img.h};
-    yoyo::memreader r{img.compress.begin() + 2, img.compress.size() - 2};
+    yoyo::memreader r{img.compress.begin(), img.compress.size()};
     flate::bitstream b{&r};
-    return flate::huffman_reader::create(&b)
+    return r.read_u16()
+        .assert([](auto id) { return id == 0x0178; },
+                "only 32k window deflate is supported")
+        .fmap([&](auto) { return flate::huffman_reader::create(&b); })
         .fmap([&](auto &hr) {
           mno::req<void> res{};
           for (auto y = 0; y < img.h && res.is_valid(); y++) {
@@ -123,5 +123,6 @@ int main() {
       .fpeek(frk::take("IEND"))
       .map(frk::end())
       .fmap(deflate(img))
+      .map([] { silog::log(silog::info, "decompressed successfully"); })
       .log_error([] { throw 0; });
 }
