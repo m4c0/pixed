@@ -78,9 +78,10 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
   }
 }
 
-static constexpr auto deflate(const dec_ctx &img) {
+static constexpr auto deflate(dec_ctx &img) {
   return [&] {
-    hai::array<stbi::pixel> data{img.w * img.h};
+    img.image = hai::array<uint8_t>{img.h * img.w * 4};
+
     yoyo::memreader r{img.compress.begin(), img.compress.size()};
     flate::bitstream b{&r};
     return r.read_u16()
@@ -91,17 +92,13 @@ static constexpr auto deflate(const dec_ctx &img) {
           mno::req<void> res{};
           for (auto y = 0; y < img.h && res.is_valid(); y++) {
             res = hr.read_u8().fmap([&](auto filter) {
-              void *ptr = data.begin() + y * img.w;
+              void *ptr = img.image.begin() + y * img.w * 4;
               return hr.read(ptr, img.w * 4)
                   .fmap([&] { return run_filter(ptr, filter, y, img.w); })
                   .trace("reading scanline");
             });
           }
           return res;
-        })
-        .map([&] {
-          auto d = reinterpret_cast<stbi::pixel *>(data.begin());
-          stbi::write_rgba_unsafe("out/test.png", img.w, img.h, d);
         });
   };
 }
@@ -124,5 +121,9 @@ int main() {
       .map(frk::end())
       .fmap(deflate(img))
       .map([] { silog::log(silog::info, "decompressed successfully"); })
+      .map([&] {
+        auto d = reinterpret_cast<stbi::pixel *>(img.image.begin());
+        stbi::write_rgba_unsafe("out/test.png", img.w, img.h, d);
+      })
       .log_error([] { throw 0; });
 }
