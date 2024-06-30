@@ -10,10 +10,11 @@ import yoyo;
 
 using namespace traits::ints;
 
-struct png {
+struct dec_ctx {
   unsigned w;
   unsigned h;
-  hai::varray<uint8_t> data{};
+  hai::varray<uint8_t> compress{};
+  hai::array<uint8_t> image{};
 };
 
 static constexpr auto ihdr(unsigned &w, unsigned &h) {
@@ -77,13 +78,13 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
   }
 }
 
-static constexpr auto deflate(const png &img) {
+static constexpr auto deflate(const dec_ctx &img) {
   return [&] {
-    if (img.data[0] != 0x78 && img.data[1] != 0x01)
+    if (img.compress[0] != 0x78 && img.compress[1] != 0x01)
       return mno::req<void>::failed("only 32k window deflate is supported");
 
     hai::array<stbi::pixel> data{img.w * img.h};
-    yoyo::memreader r{img.data.begin() + 2, img.data.size() - 2};
+    yoyo::memreader r{img.compress.begin() + 2, img.compress.size() - 2};
     flate::bitstream b{&r};
     return flate::huffman_reader::create(&b)
         .fmap([&](auto &hr) {
@@ -114,11 +115,11 @@ static constexpr auto idat(hai::varray<uint8_t> &data) {
 }
 
 int main() {
-  png img{};
+  dec_ctx img{};
   yoyo::file_reader::open("blank.png")
       .fpeek(frk::assert("PNG"))
       .fpeek(frk::take("IHDR", ihdr(img.w, img.h)))
-      .fpeek(frk::take_all("IDAT", idat(img.data)))
+      .fpeek(frk::take_all("IDAT", idat(img.compress)))
       .fpeek(frk::take("IEND"))
       .map(frk::end())
       .fmap(deflate(img))
