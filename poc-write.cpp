@@ -42,7 +42,7 @@ int main() {
   return yoyo::file_writer::open("out/test.png")
       .fpeek(frk::signature("PNG"))
       .fpeek(frk::chunk("IHDR", ihdr{w, h}))
-      .fpeek(pixed::idat(img.begin(), w, h))
+      .fpeek(pixed::write_idat(img.begin(), w, h))
       .fpeek(frk::chunk("IEND"))
       .map(frk::end())
       .map([] { return 0; })

@@ -68,8 +68,8 @@ static hai::array<uint8_t> filter(const uint8_t *img, unsigned w, unsigned h) {
   return res;
 }
 
-mno::req<void> pixed::idat(yoyo::writer &wr, const void *img, unsigned w,
-                           unsigned h) {
+mno::req<void> pixed::write_idat(yoyo::writer &wr, const void *img, unsigned w,
+                                 unsigned h) {
   auto buf = filter(static_cast<const uint8_t *>(img), w, h);
   return spliterate_idat(wr, buf.begin(), buf.size());
 }
