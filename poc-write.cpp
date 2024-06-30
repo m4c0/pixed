@@ -35,42 +35,41 @@ static constexpr auto adler(const uint8_t *data, unsigned len) {
 }
 
 static constexpr auto min(auto a, auto b) { return a > b ? b : a; }
-static constexpr auto spliterate_idat(const uint8_t *img, unsigned size) {
-  return [=](auto &png) mutable {
-    constexpr const auto buf_size = 1 << 14;
+static constexpr auto spliterate_idat(auto &png, const uint8_t *img,
+                                      unsigned size) {
+  constexpr const auto buf_size = 1 << 14;
 
-    hai::array<uint8_t> buf{buf_size};
-    auto res = mno::req{yoyo::memwriter{buf}}
-                   .fpeek(yoyo::write_u8(0x78)) // CMF
-                   .fpeek(yoyo::write_u8(0x1)); // FLG
-    while (res.is_valid() && size > 0) {
-      // TODO: really compress
+  hai::array<uint8_t> buf{buf_size};
+  auto res = mno::req{yoyo::memwriter{buf}}
+                 .fpeek(yoyo::write_u8(0x78)) // CMF
+                 .fpeek(yoyo::write_u8(0x1)); // FLG
+  while (res.is_valid() && size > 0) {
+    // TODO: really compress
 
-      unsigned len{};
-      unsigned bhead{};
-      res = res.peek([&](auto &w) {
-                 len = min(w.raw_size() - w.raw_pos() - 5, size);
-                 bhead = len == size;
-               })
-                .fpeek(yoyo::write_u8(bhead))
-                .fpeek(yoyo::write_u16(len))
-                .fpeek(yoyo::write_u16(~len))
-                .fpeek(yoyo::write(img, len))
-                .fpeek(yoyo::seek(0, yoyo::seek_mode::set))
-                .peek([&](auto &w) {
-                  img += len;
-                  size -= len;
-                })
-                .fpeek([&](auto &w) {
-                  return size == 0 ? w.write_u32_be(adler(img, size))
-                                   : mno::req<void>{};
-                })
-                .fpeek([&](auto &w) {
-                  return frk::chunk("IDAT", buf.begin(), w.raw_size())(png);
-                });
+    unsigned len{};
+    unsigned bhead{};
+    res = res.peek([&](auto &w) {
+               len = min(w.raw_size() - w.raw_pos() - 5, size);
+               bhead = len == size;
+             })
+              .fpeek(yoyo::write_u8(bhead))
+              .fpeek(yoyo::write_u16(len))
+              .fpeek(yoyo::write_u16(~len))
+              .fpeek(yoyo::write(img, len))
+              .fpeek(yoyo::seek(0, yoyo::seek_mode::set))
+              .peek([&](auto &w) {
+                img += len;
+                size -= len;
+              })
+              .fpeek([&](auto &w) {
+                return size == 0 ? w.write_u32_be(adler(img, size))
+                                 : mno::req<void>{};
+              })
+              .fpeek([&](auto &w) {
+                return frk::chunk("IDAT", buf.begin(), w.raw_size())(png);
+              });
     }
     return res.map([](auto &) {});
-  };
 }
 
 static hai::array<uint8_t> filter(const uint8_t *img, unsigned w, unsigned h) {
@@ -84,6 +83,13 @@ static hai::array<uint8_t> filter(const uint8_t *img, unsigned w, unsigned h) {
     }
   }
   return res;
+}
+
+static auto idat(const void *img, unsigned w, unsigned h) {
+  return [=](auto &wr) {
+    auto buf = filter(static_cast<const uint8_t *>(img), w, h);
+    return spliterate_idat(wr, buf.begin(), buf.size());
+  };
 }
 
 int main() {
@@ -101,12 +107,10 @@ int main() {
     }
   }
 
-  auto buf = filter(img.begin(), w, h);
-
   return yoyo::file_writer::open("out/test.png")
       .fpeek(frk::signature("PNG"))
       .fpeek(frk::chunk("IHDR", ihdr{w, h}))
-      .fpeek(spliterate_idat(buf.begin(), buf.size()))
+      .fpeek(idat(img.begin(), w, h))
       .fpeek(frk::chunk("IEND"))
       .map(frk::end())
       .map([] { return 0; })
