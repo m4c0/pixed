@@ -106,8 +106,14 @@ static constexpr auto deflate(dec_ctx &img) {
 static constexpr auto idat(hai::varray<uint8_t> &data) {
   return [&](yoyo::subreader r) {
     auto size = data.size() + r.raw_size();
-    data.set_capacity(size);
+    data.add_capacity(size);
     return r.read(data.end(), r.raw_size()).map([&] { data.expand(size); });
+  };
+}
+
+static constexpr auto read_idat(dec_ctx &img) {
+  return [&](auto &r) {
+    return frk::take_all("IDAT", idat(img.compress))(r).fmap(deflate(img));
   };
 }
 
@@ -116,10 +122,9 @@ int main() {
   yoyo::file_reader::open("blank.png")
       .fpeek(frk::assert("PNG"))
       .fpeek(frk::take("IHDR", ihdr(img.w, img.h)))
-      .fpeek(frk::take_all("IDAT", idat(img.compress)))
+      .fpeek(read_idat(img))
       .fpeek(frk::take("IEND"))
       .map(frk::end())
-      .fmap(deflate(img))
       .map([] { silog::log(silog::info, "decompressed successfully"); })
       .map([&] {
         auto d = reinterpret_cast<stbi::pixel *>(img.image.begin());
