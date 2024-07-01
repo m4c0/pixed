@@ -1,15 +1,9 @@
 #pragma leco tool
 
-import flate;
-import fork;
-import hai;
 import pixed;
 import silog;
 import stubby;
-import traits;
-import yoyo;
 
-using namespace traits::ints;
 using namespace pixed;
 
 int main() {
