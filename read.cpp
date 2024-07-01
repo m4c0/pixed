@@ -74,7 +74,7 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
 
 static constexpr auto deflate(context &img) {
   return [&] {
-    img.image = hai::array<uint8_t>{img.h * img.w * 4};
+    img.image = hai::array<pixed::pixel>{img.h * img.w};
 
     yoyo::memreader r{img.compress.begin(), img.compress.size()};
     flate::bitstream b{&r};
@@ -86,7 +86,7 @@ static constexpr auto deflate(context &img) {
           mno::req<void> res{};
           for (auto y = 0; y < img.h && res.is_valid(); y++) {
             res = hr.read_u8().fmap([&](auto filter) {
-              void *ptr = img.image.begin() + y * img.w * 4;
+              void *ptr = img.image.begin() + y * img.w;
               return hr.read(ptr, img.w * 4)
                   .fmap([&] { return run_filter(ptr, filter, y, img.w); })
                   .trace("reading scanline");

@@ -11,12 +11,21 @@ import yoyo;
 using namespace traits::ints;
 
 namespace pixed {
+export struct pixel {
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+  uint8_t a;
+};
+static_assert(sizeof(pixel) == 4);
+
 export struct context {
   unsigned w;
   unsigned h;
   hai::varray<uint8_t> compress{};
-  hai::array<uint8_t> image{};
+  hai::array<pixel> image{};
 };
+
 export context create(unsigned w, unsigned h) {
   return {.w = w, .h = h, .image{w * h * 4}};
 }
