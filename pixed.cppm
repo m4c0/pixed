@@ -29,4 +29,10 @@ export context create(unsigned w, unsigned h) {
 
 export mno::req<void> write(const char *file, context &img);
 export mno::req<context> read(const char *file);
+
+export void set(context &ctx, int x, int y, pixel p) {
+  if (x < 0 || x >= ctx.w || y < 0 || y >= ctx.h)
+    return;
+  ctx.image[y * ctx.w + x] = p;
+}
 } // namespace pixed
