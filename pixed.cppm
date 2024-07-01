@@ -18,6 +18,11 @@ export struct dec_ctx {
   hai::array<uint8_t> image{};
 };
 
+mno::req<void> write_ihdr(yoyo::writer &wr, unsigned w, unsigned h);
+export constexpr auto write_ihdr(unsigned w, unsigned h) {
+  return [=](auto &wr) { return write_ihdr(wr, w, h); };
+}
+
 mno::req<void> write_idat(yoyo::writer &wr, const void *img, unsigned w,
                           unsigned h);
 export constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
