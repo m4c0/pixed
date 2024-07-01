@@ -57,14 +57,15 @@ static auto spliterate_idat(auto &png, const uint8_t *img, unsigned size) {
   auto res = mno::req{yoyo::memwriter{buf}}
                  .fpeek(yoyo::write_u8(0x78)) // CMF
                  .fpeek(yoyo::write_u8(0x1)); // FLG
-  while (res.is_valid() && size > 0) {
+  auto rem = size;
+  while (res.is_valid() && rem > 0) {
     // TODO: really compress
 
     unsigned len{};
     unsigned bhead{};
     res = res.peek([&](auto &w) {
-               len = min(w.raw_size() - w.raw_pos() - 5, size);
-               bhead = len == size;
+               len = min(w.raw_size() - w.raw_pos() - 5, rem);
+               bhead = len == rem;
              })
               .fpeek(yoyo::write_u8(bhead))
               .fpeek(yoyo::write_u16(len))
@@ -73,11 +74,11 @@ static auto spliterate_idat(auto &png, const uint8_t *img, unsigned size) {
               .fpeek(yoyo::seek(0, yoyo::seek_mode::set))
               .peek([&](auto &w) {
                 img += len;
-                size -= len;
+                rem -= len;
               })
               .fpeek([&](auto &w) {
-                return size == 0 ? w.write_u32_be(adler(img, size))
-                                 : mno::req<void>{};
+                return rem == 0 ? w.write_u32_be(adler(img, size))
+                                : mno::req<void>{};
               })
               .fpeek([&](auto &w) {
                 return frk::chunk("IDAT", buf.begin(), w.raw_size())(png);
