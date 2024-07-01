@@ -72,11 +72,11 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
   }
 }
 
-static constexpr auto deflate(context &img) {
+static constexpr auto deflate(context &img, hai::varray<uint8_t> &zlib) {
   return [&] {
     img.image = hai::array<pixed::pixel>{img.h * img.w};
 
-    yoyo::memreader r{img.compress.begin(), img.compress.size()};
+    yoyo::memreader r{zlib.begin(), zlib.size()};
     flate::bitstream b{&r};
     return r.read_u16()
         .assert([](auto id) { return id == 0x0178; },
@@ -106,7 +106,8 @@ static constexpr auto idat(hai::varray<uint8_t> &data) {
 }
 
 static mno::req<void> read_idat(yoyo::reader &r, context &img) {
-  return frk::take_all("IDAT", idat(img.compress))(r).fmap(deflate(img));
+  hai::varray<uint8_t> zlib{};
+  return frk::take_all("IDAT", idat(zlib))(r).fmap(deflate(img, zlib));
 }
 static constexpr auto read_idat(context &img) {
   return [&](auto &r) { return read_idat(r, img); };

@@ -22,7 +22,6 @@ static_assert(sizeof(pixel) == 4);
 export struct context {
   unsigned w;
   unsigned h;
-  hai::varray<uint8_t> compress{};
   hai::array<pixel> image{};
 };
 
