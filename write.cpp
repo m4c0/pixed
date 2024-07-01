@@ -1,6 +1,7 @@
 module pixed;
 import fork;
 import hai;
+import jute;
 import missingno;
 import traits;
 import yoyo;
@@ -98,10 +99,33 @@ static constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
   return [=](auto &wr) { return write_idat(wr, img, w, h); };
 }
 
+static constexpr auto write_splt(const hai::array<pixed::pixel> &pal) {
+  return [&](auto &wr) {
+    if (pal.size() == 0)
+      return mno::req<void>{};
+
+    constexpr const jute::view name = "PIXED";
+    constexpr const unsigned name_size = name.size();
+    hai::array<uint8_t> data{name_size + 2 + 6 * pal.size()};
+    auto res = mno::req{yoyo::memwriter{data}}
+                   .fpeek(yoyo::write(name.data(), name_size))
+                   .fpeek(yoyo::write_u8(0))  // null terminator
+                   .fpeek(yoyo::write_u8(8)); // sample depth
+    for (auto p : pal) {
+      res = res.fpeek(yoyo::write(&p, sizeof(p)))
+                .fpeek(yoyo::write_u16(0)); // Frequency
+    }
+    return res.fmap([&](auto &) {
+      return frk::chunk("sPLT", data.begin(), data.size())(wr);
+    });
+  };
+}
+
 mno::req<void> pixed::write(const char *file, context &img) {
   return yoyo::file_writer::open(file)
       .fpeek(frk::signature("PNG"))
       .fpeek(write_ihdr(img.w, img.h))
+      .fpeek(write_splt(img.palette))
       .fpeek(write_idat(img.image.begin(), img.w, img.h))
       .fpeek(frk::chunk("IEND"))
       .map(frk::end());

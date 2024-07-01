@@ -30,7 +30,7 @@ Where:
   throw 0;
 }
 
-static constexpr const auto pal_name = jute::view{"pixed palette"};
+static constexpr const auto pal_name = jute::view{"PIXED"};
 static constexpr const unsigned initial_size = pal_name.size() + 2;
 
 chunk_data_t new_sPLT() {
