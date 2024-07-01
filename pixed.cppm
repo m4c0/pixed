@@ -3,6 +3,7 @@
 #pragma leco add_impl write_idat
 
 export module pixed;
+import fork;
 import hai;
 import missingno;
 import traits;
@@ -39,4 +40,14 @@ export constexpr auto read_idat(dec_ctx &img) {
   return [&](auto &r) { return read_idat(r, img); };
 }
 
+export mno::req<dec_ctx> read(const char *file) {
+  dec_ctx res{};
+  return yoyo::file_reader::open(file)
+      .fpeek(frk::assert("PNG"))
+      .fpeek(read_ihdr(res))
+      .fpeek(read_idat(res))
+      .fpeek(frk::take("IEND"))
+      .map(frk::end())
+      .map([&] { return traits::move(res); });
+}
 } // namespace pixed
