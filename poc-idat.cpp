@@ -3,19 +3,14 @@
 import flate;
 import fork;
 import hai;
+import pixed;
 import silog;
 import stubby;
 import traits;
 import yoyo;
 
 using namespace traits::ints;
-
-struct dec_ctx {
-  unsigned w;
-  unsigned h;
-  hai::varray<uint8_t> compress{};
-  hai::array<uint8_t> image{};
-};
+using namespace pixed;
 
 static constexpr auto ihdr(unsigned &w, unsigned &h) {
   return [&](yoyo::subreader r) {
