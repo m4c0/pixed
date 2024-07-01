@@ -3,18 +3,12 @@ import gopt;
 import fork;
 import hai;
 import jute;
+import pixed;
 import silog;
 import traits;
 import yoyo;
 
 using namespace traits::ints;
-using chunk_data_t = hai::varray<char>;
-
-struct chunk {
-  uint32_t type;
-  chunk_data_t data;
-  uint32_t crc;
-};
 
 static void usage() {
   silog::log(silog::error, R"(
@@ -25,36 +19,14 @@ Where:
         -i: input filename
         -n: creates or clear palette in sPLT
         -o: output filename. If absent, no file modification is done
-        -r: remove palette from sPLT
 )");
   throw 0;
 }
 
-static constexpr const auto pal_name = jute::view{"PIXED"};
-static constexpr const unsigned initial_size = pal_name.size() + 2;
-
-chunk_data_t new_sPLT() {
-  chunk_data_t res{initial_size};
-  res.expand(initial_size);
-
-  char *buf = res.begin();
-  for (auto c : pal_name)
-    *buf++ = c;
-
-  *buf++ = 0;
-  *buf++ = 8;
-  return res;
-}
-
-void append_sPLT(chunk_data_t &sPLT, const char *val) {
-  if (sPLT.size() == 0) {
-    silog::log(silog::error, "attempt of appending to a non-existing palette");
-    throw 0;
-  }
-
+void append_palette(pixed::context &ctx, const char *val) {
+  uint32_t n{};
   auto c = val;
   for (auto i = 0; i < 4; i++) {
-    uint8_t n{};
     for (auto j = 0; j < 2; j++, c++) {
       n <<= 4;
       if (*c >= '0' && *c <= '9') {
@@ -68,72 +40,34 @@ void append_sPLT(chunk_data_t &sPLT, const char *val) {
         throw 0;
       }
     }
-    sPLT.push_back_doubling(n);
   }
 
-  // Frequency - zero'd since this is a pseudo-palette
-  sPLT.push_back_doubling(0);
-  sPLT.push_back_doubling(0);
+  auto &pal = ctx.palette;
+  pal.set_capacity(pal.size() + 1);
+  pal[pal.size() - 1] = *reinterpret_cast<pixed::pixel *>(&n);
 }
 
 int main(int argc, char **argv) try {
-  const char *input{};
-  chunk_data_t sPLT{};
+  pixed::context ctx{};
 
   auto opts = gopt_parse(argc, argv, "i:o:rna:", [&](auto ch, auto val) {
     switch (ch) {
     case 'a':
-      append_sPLT(sPLT, val);
-      break;
-    case 'r':
-      sPLT = {};
+      append_palette(ctx, val);
       break;
     case 'n':
-      sPLT = new_sPLT();
+      ctx.palette = {};
       break;
 
     case 'i':
-      input = val;
-      yoyo::file_reader::open(val)
-          .fpeek(frk::assert("PNG"))
-          .fpeek(frk::take("IHDR"))
-          .fpeek(frk::take("sPLT",
-                           [&](yoyo::subreader r) {
-                             chunk_data_t data{
-                                 static_cast<unsigned>(r.raw_size())};
-                             data.set_capacity(r.raw_size());
-                             data.expand(r.raw_size());
-                             return r.read(data.begin(), data.size()).map([&] {
-                               if (jute::view::unsafe(data.begin()) != pal_name)
-                                 return;
-
-                               sPLT = traits::move(data);
-                             });
-                           }))
-          .fpeek(frk::take("IDAT"))
-          .fpeek(frk::take("IEND"))
-          .map(frk::end())
-          .trace("reading palette from input file")
-          .log_error([] { throw 0; });
+      ctx = pixed::read(val)
+                .trace("reading palette from input file")
+                .log_error([] { throw 0; });
       break;
     case 'o':
-      frk::copy::start("PNG", val)
-          .fmap([&] {
-            return yoyo::file_reader::open(input)
-                .fpeek(frk::assert("PNG"))
-                .fpeek(frk::copy::chunk("IHDR", val))
-                .fpeek([&](auto &&r) {
-                  return yoyo::file_writer::append(val)
-                      .fpeek(frk::chunk("sPLT", sPLT.begin(), sPLT.size()))
-                      .map(frk::end());
-                })
-                .fpeek(frk::copy::chunk("IDAT", val))
-                .fpeek(frk::copy::chunk("IEND", val))
-                .map(frk::end())
-                .trace("writing output file");
-          })
-          .trace("copying chunks from input file")
-          .log_error([] { throw 0; });
+      pixed::write(val, ctx).trace("writing output file").log_error([] {
+        throw 0;
+      });
       break;
     default:
       usage();
@@ -143,16 +77,15 @@ int main(int argc, char **argv) try {
   if (opts.argc != 0)
     usage();
 
-  if (sPLT.size() == 0) {
+  if (ctx.palette.size() == 0) {
     silog::log(silog::info, "No palette present");
   } else {
-    unsigned size = sPLT.size() - initial_size;
-    unsigned count = size / 6;
+    unsigned i{};
+    unsigned count = ctx.palette.size();
     silog::log(silog::info, "Palette size: %d", count);
-    auto c = sPLT.begin() + initial_size;
-    for (auto i = 0; i < count; i++, c += 6) {
-      silog::log(silog::info, "- Colour %3d: %02x%02x%02x%02x", i + 1,
-                 c[0] & 0xFF, c[1] & 0xFF, c[2] & 0xFF, c[3] & 0xFF);
+    for (auto p : ctx.palette) {
+      silog::log(silog::info, "- Colour %3d: %02x%02x%02x%02x", ++i, p.r, p.g,
+                 p.b, p.a);
     }
   }
 
