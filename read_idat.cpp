@@ -1,8 +1,37 @@
 module pixed;
 import flate;
 import fork;
+import silog;
 
 using namespace pixed;
+
+static mno::req<void> read_ihdr(yoyo::reader &r, unsigned &w, unsigned &h) {
+  return r.read_u32_be()
+      .map([&](auto n) { w = n; })
+      .fmap([&] { return r.read_u32_be(); })
+      .map([&](auto n) { h = n; })
+      .fmap([&] { return r.read_u8(); })
+      .assert([](auto bit_depth) { return bit_depth == 8; },
+              "unsupported bitdepth")
+      .fmap([&](auto) { return r.read_u8(); })
+      .assert([](auto colour_type) { return colour_type == 6; },
+              "unsupported colour type")
+      .fmap([&](auto) { return r.read_u8(); })
+      .assert([](auto compression) { return compression == 0; },
+              "unsupported compression")
+      .fmap([&](auto) { return r.read_u8(); })
+      .assert([](auto filter) { return filter == 0; }, "unsupported filter")
+      .fmap([&](auto) { return r.read_u8(); })
+      .assert([](auto interlace) { return interlace == 0; },
+              "unsupported interlace")
+      .map([&](auto) { silog::log(silog::debug, "found %dx%d image", w, h); });
+}
+static constexpr auto read_ihdr(unsigned &w, unsigned &h) {
+  return [&](yoyo::subreader r) { return read_ihdr(r, w, h); };
+}
+mno::req<void> pixed::read_ihdr(yoyo::reader &r, dec_ctx &ctx) {
+  return frk::take("IHDR", ::read_ihdr(ctx.w, ctx.h))(r);
+}
 
 static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
   auto data = static_cast<uint8_t *>(d);

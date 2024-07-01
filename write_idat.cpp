@@ -7,6 +7,29 @@ import yoyo;
 
 using namespace traits::ints;
 
+#pragma pack(push, 1)
+namespace {
+struct ihdr {
+  uint32_t width;
+  uint32_t height;
+  uint8_t bit_depth = 8;
+  uint8_t colour_type = 6; // RGBA
+  uint8_t compression = 0; // Deflate
+  uint8_t filter = 0;
+  uint8_t interlace = 0;
+
+  ihdr(uint32_t w, uint32_t h)
+      : width{yoyo::flip32(w)}
+      , height{yoyo::flip32(h)} {}
+};
+} // namespace
+#pragma pack(pop)
+static_assert(sizeof(ihdr) == 13);
+
+mno::req<void> pixed::write_ihdr(yoyo::writer &wr, unsigned w, unsigned h) {
+  return frk::chunk("IHDR", ihdr{w, h})(wr);
+}
+
 static constexpr auto adler(const uint8_t *data, unsigned len) {
   static constexpr const auto base = 65521;
   uint32_t s1 = 1;

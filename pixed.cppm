@@ -1,4 +1,3 @@
-#pragma leco add_impl ihdr
 #pragma leco add_impl read_idat
 #pragma leco add_impl write_idat
 
@@ -20,13 +19,13 @@ export struct dec_ctx {
 };
 
 mno::req<void> write_ihdr(yoyo::writer &wr, unsigned w, unsigned h);
-export constexpr auto write_ihdr(unsigned w, unsigned h) {
+static constexpr auto write_ihdr(unsigned w, unsigned h) {
   return [=](auto &wr) { return write_ihdr(wr, w, h); };
 }
 
 mno::req<void> write_idat(yoyo::writer &wr, const void *img, unsigned w,
                           unsigned h);
-export constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
+static constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
   return [=](auto &wr) { return write_idat(wr, img, w, h); };
 }
 
@@ -40,12 +39,12 @@ export mno::req<void> write(const char *file, dec_ctx &img) {
 }
 
 mno::req<void> read_ihdr(yoyo::reader &r, dec_ctx &img);
-export constexpr auto read_ihdr(dec_ctx &img) {
+static constexpr auto read_ihdr(dec_ctx &img) {
   return [&](auto &r) { return read_ihdr(r, img); };
 }
 
 mno::req<void> read_idat(yoyo::reader &r, dec_ctx &img);
-export constexpr auto read_idat(dec_ctx &img) {
+static constexpr auto read_idat(dec_ctx &img) {
   return [&](auto &r) { return read_idat(r, img); };
 }
 
