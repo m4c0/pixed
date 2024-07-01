@@ -12,12 +12,12 @@ import yoyo;
 using namespace traits::ints;
 using namespace pixed;
 
-static constexpr auto ihdr(unsigned &w, unsigned &h) {
-  return [&](yoyo::subreader r) {
+static constexpr auto ihdr(dec_ctx &ctx) {
+  return [ctx = &ctx](yoyo::subreader r) {
     return r.read_u32_be()
-        .map([&](auto n) { w = n; })
+        .map([&](auto n) { ctx->w = n; })
         .fmap([&] { return r.read_u32_be(); })
-        .map([&](auto n) { h = n; })
+        .map([&](auto n) { ctx->h = n; })
         .fmap([&] { return r.read_u8(); })
         .assert([](auto bit_depth) { return bit_depth == 8; },
                 "unsupported bitdepth")
@@ -32,8 +32,9 @@ static constexpr auto ihdr(unsigned &w, unsigned &h) {
         .fmap([&](auto) { return r.read_u8(); })
         .assert([](auto interlace) { return interlace == 0; },
                 "unsupported interlace")
-        .map(
-            [&](auto) { silog::log(silog::debug, "found %dx%d image", w, h); });
+        .map([&](auto) {
+          silog::log(silog::debug, "found %dx%d image", ctx->w, ctx->h);
+        });
   };
 }
 
@@ -41,7 +42,7 @@ int main() {
   dec_ctx img{};
   yoyo::file_reader::open("blank.png")
       .fpeek(frk::assert("PNG"))
-      .fpeek(frk::take("IHDR", ihdr(img.w, img.h)))
+      .fpeek(frk::take("IHDR", ihdr(img)))
       .fpeek(read_idat(img))
       .fpeek(frk::take("IEND"))
       .map(frk::end())
