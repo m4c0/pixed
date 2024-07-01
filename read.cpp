@@ -29,8 +29,11 @@ static mno::req<void> read_ihdr(yoyo::reader &r, unsigned &w, unsigned &h) {
 static constexpr auto read_ihdr(unsigned &w, unsigned &h) {
   return [&](yoyo::subreader r) { return read_ihdr(r, w, h); };
 }
-mno::req<void> pixed::read_ihdr(yoyo::reader &r, dec_ctx &ctx) {
+static mno::req<void> read_ihdr(yoyo::reader &r, dec_ctx &ctx) {
   return frk::take("IHDR", ::read_ihdr(ctx.w, ctx.h))(r);
+}
+static constexpr auto read_ihdr(dec_ctx &img) {
+  return [&](auto &r) { return read_ihdr(r, img); };
 }
 
 static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
@@ -102,6 +105,20 @@ static constexpr auto idat(hai::varray<uint8_t> &data) {
   };
 }
 
-mno::req<void> pixed::read_idat(yoyo::reader &r, dec_ctx &img) {
+static mno::req<void> read_idat(yoyo::reader &r, dec_ctx &img) {
   return frk::take_all("IDAT", idat(img.compress))(r).fmap(deflate(img));
+}
+static constexpr auto read_idat(dec_ctx &img) {
+  return [&](auto &r) { return read_idat(r, img); };
+}
+
+mno::req<dec_ctx> pixed::read(const char *file) {
+  dec_ctx res{};
+  return yoyo::file_reader::open(file)
+      .fpeek(frk::assert("PNG"))
+      .fpeek(read_ihdr(res))
+      .fpeek(read_idat(res))
+      .fpeek(frk::take("IEND"))
+      .map(frk::end())
+      .map([&] { return traits::move(res); });
 }

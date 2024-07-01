@@ -18,25 +18,5 @@ export struct dec_ctx {
   hai::array<uint8_t> image{};
 };
 export mno::req<void> write(const char *file, dec_ctx &img);
-
-mno::req<void> read_ihdr(yoyo::reader &r, dec_ctx &img);
-static constexpr auto read_ihdr(dec_ctx &img) {
-  return [&](auto &r) { return read_ihdr(r, img); };
-}
-
-mno::req<void> read_idat(yoyo::reader &r, dec_ctx &img);
-static constexpr auto read_idat(dec_ctx &img) {
-  return [&](auto &r) { return read_idat(r, img); };
-}
-
-export mno::req<dec_ctx> read(const char *file) {
-  dec_ctx res{};
-  return yoyo::file_reader::open(file)
-      .fpeek(frk::assert("PNG"))
-      .fpeek(read_ihdr(res))
-      .fpeek(read_idat(res))
-      .fpeek(frk::take("IEND"))
-      .map(frk::end())
-      .map([&] { return traits::move(res); });
-}
+export mno::req<dec_ctx> read(const char *file);
 } // namespace pixed
