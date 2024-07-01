@@ -2,11 +2,9 @@
 #pragma leco add_impl write
 
 export module pixed;
-import fork;
 import hai;
 import missingno;
 import traits;
-import yoyo;
 
 using namespace traits::ints;
 
@@ -26,7 +24,7 @@ export struct context {
 };
 
 export context create(unsigned w, unsigned h) {
-  return {.w = w, .h = h, .image{w * h * 4}};
+  return {.w = w, .h = h, .image{w * h}};
 }
 
 export mno::req<void> write(const char *file, context &img);

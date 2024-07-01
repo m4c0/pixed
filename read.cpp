@@ -1,6 +1,7 @@
 module pixed;
 import flate;
 import fork;
+import yoyo;
 import silog;
 
 using namespace pixed;
