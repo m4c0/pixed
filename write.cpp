@@ -26,8 +26,11 @@ struct ihdr {
 #pragma pack(pop)
 static_assert(sizeof(ihdr) == 13);
 
-mno::req<void> pixed::write_ihdr(yoyo::writer &wr, unsigned w, unsigned h) {
+static mno::req<void> write_ihdr(yoyo::writer &wr, unsigned w, unsigned h) {
   return frk::chunk("IHDR", ihdr{w, h})(wr);
+}
+static constexpr auto write_ihdr(unsigned w, unsigned h) {
+  return [=](auto &wr) { return write_ihdr(wr, w, h); };
 }
 
 static constexpr auto adler(const uint8_t *data, unsigned len) {
@@ -91,8 +94,21 @@ static hai::array<uint8_t> filter(const uint8_t *img, unsigned w, unsigned h) {
   return res;
 }
 
-mno::req<void> pixed::write_idat(yoyo::writer &wr, const void *img, unsigned w,
+static mno::req<void> write_idat(yoyo::writer &wr, const void *img, unsigned w,
                                  unsigned h) {
   auto buf = filter(static_cast<const uint8_t *>(img), w, h);
   return spliterate_idat(wr, buf.begin(), buf.size());
+}
+
+static constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
+  return [=](auto &wr) { return write_idat(wr, img, w, h); };
+}
+
+mno::req<void> pixed::write(const char *file, dec_ctx &img) {
+  return yoyo::file_writer::open(file)
+      .fpeek(frk::signature("PNG"))
+      .fpeek(write_ihdr(img.w, img.h))
+      .fpeek(write_idat(img.image.begin(), img.w, img.h))
+      .fpeek(frk::chunk("IEND"))
+      .map(frk::end());
 }

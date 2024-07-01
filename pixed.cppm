@@ -17,26 +17,7 @@ export struct dec_ctx {
   hai::varray<uint8_t> compress{};
   hai::array<uint8_t> image{};
 };
-
-mno::req<void> write_ihdr(yoyo::writer &wr, unsigned w, unsigned h);
-static constexpr auto write_ihdr(unsigned w, unsigned h) {
-  return [=](auto &wr) { return write_ihdr(wr, w, h); };
-}
-
-mno::req<void> write_idat(yoyo::writer &wr, const void *img, unsigned w,
-                          unsigned h);
-static constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
-  return [=](auto &wr) { return write_idat(wr, img, w, h); };
-}
-
-export mno::req<void> write(const char *file, dec_ctx &img) {
-  return yoyo::file_writer::open(file)
-      .fpeek(frk::signature("PNG"))
-      .fpeek(pixed::write_ihdr(img.w, img.h))
-      .fpeek(pixed::write_idat(img.image.begin(), img.w, img.h))
-      .fpeek(frk::chunk("IEND"))
-      .map(frk::end());
-}
+export mno::req<void> write(const char *file, dec_ctx &img);
 
 mno::req<void> read_ihdr(yoyo::reader &r, dec_ctx &img);
 static constexpr auto read_ihdr(dec_ctx &img) {
