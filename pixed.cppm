@@ -11,12 +11,16 @@ import yoyo;
 using namespace traits::ints;
 
 namespace pixed {
-export struct dec_ctx {
+export struct context {
   unsigned w;
   unsigned h;
   hai::varray<uint8_t> compress{};
   hai::array<uint8_t> image{};
 };
-export mno::req<void> write(const char *file, dec_ctx &img);
-export mno::req<dec_ctx> read(const char *file);
+export context create(unsigned w, unsigned h) {
+  return {.w = w, .h = h, .image{w * h * 4}};
+}
+
+export mno::req<void> write(const char *file, context &img);
+export mno::req<context> read(const char *file);
 } // namespace pixed

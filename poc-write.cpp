@@ -4,10 +4,7 @@ import pixed;
 int main() {
   static constexpr const auto w = 1024;
   static constexpr const auto h = 1024;
-  static constexpr const auto img_len = 4 * h * w;
-
-  pixed::dec_ctx ctx{.w = w, .h = h, .image{img_len}};
-
+  auto ctx = pixed::create(w, h);
   auto *sl = ctx.image.begin();
   for (auto y = 0; y < h; y++) {
     for (auto x = 0; x < w; x++, sl += 4) {

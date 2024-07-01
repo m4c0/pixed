@@ -104,7 +104,7 @@ static constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
   return [=](auto &wr) { return write_idat(wr, img, w, h); };
 }
 
-mno::req<void> pixed::write(const char *file, dec_ctx &img) {
+mno::req<void> pixed::write(const char *file, context &img) {
   return yoyo::file_writer::open(file)
       .fpeek(frk::signature("PNG"))
       .fpeek(write_ihdr(img.w, img.h))
