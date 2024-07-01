@@ -49,44 +49,6 @@ static constexpr uint32_t adler(const uint8_t *data, unsigned len) {
 #endif
 }
 
-static constexpr auto min(auto a, auto b) { return a > b ? b : a; }
-static auto spliterate_idat(auto &png, const uint8_t *img, unsigned size) {
-  constexpr const auto buf_size = 1 << 14;
-
-  hai::array<uint8_t> buf{buf_size};
-  auto res = mno::req{yoyo::memwriter{buf}}
-                 .fpeek(yoyo::write_u8(0x78)) // CMF
-                 .fpeek(yoyo::write_u8(0x1)); // FLG
-  auto rem = size;
-  while (res.is_valid() && rem > 0) {
-    // TODO: really compress
-
-    unsigned len{};
-    unsigned bhead{};
-    res = res.peek([&](auto &w) {
-               len = min(w.raw_size() - w.raw_pos() - 5, rem);
-               bhead = len == rem;
-             })
-              .fpeek(yoyo::write_u8(bhead))
-              .fpeek(yoyo::write_u16(len))
-              .fpeek(yoyo::write_u16(~len))
-              .fpeek(yoyo::write(img, len))
-              .fpeek(yoyo::seek(0, yoyo::seek_mode::set))
-              .peek([&](auto &w) {
-                img += len;
-                rem -= len;
-              })
-              .fpeek([&](auto &w) {
-                return rem == 0 ? w.write_u32_be(adler(img, size))
-                                : mno::req<void>{};
-              })
-              .fpeek([&](auto &w) {
-                return frk::chunk("IDAT", buf.begin(), w.raw_size())(png);
-              });
-  }
-  return res.map([](auto &) {});
-}
-
 static hai::array<uint8_t> filter(const uint8_t *img, unsigned w, unsigned h) {
   hai::array<uint8_t> res{(w * 4 + 1) * h};
   auto *sl = res.begin();
@@ -100,10 +62,36 @@ static hai::array<uint8_t> filter(const uint8_t *img, unsigned w, unsigned h) {
   return res;
 }
 
+static auto compress(const hai::array<uint8_t> &data) {
+  constexpr const auto part_size = 1 << 14;
+  constexpr const auto blk_size = 5 + part_size;
+
+  const auto blks = (data.size() + part_size - 1) / part_size;
+  hai::array<uint8_t> out{2 + (blks * blk_size) + 4};
+
+  auto res = mno::req{yoyo::memwriter{out}}
+                 .fpeek(yoyo::write_u8(0x78)) // CMF
+                 .fpeek(yoyo::write_u8(0x1)); // FLG
+
+  auto *ptr = data.begin();
+  for (auto i = 0; i < blks && res.is_valid(); i++, ptr += part_size) {
+    auto len = (i == blks - 1) ? data.end() - ptr : part_size;
+    res = res.fpeek(yoyo::write_u8(i == blks - 1)) // BHEAD
+              .fpeek(yoyo::write_u16(len))
+              .fpeek(yoyo::write_u16(~len))
+              .fpeek(yoyo::write(ptr, len));
+  }
+
+  return res.fpeek(yoyo::write_u32_be(adler(data.begin(), data.size())))
+      .map([&](auto &) { return traits::move(out); });
+}
+
 static mno::req<void> write_idat(yoyo::writer &wr, const void *img, unsigned w,
                                  unsigned h) {
   auto buf = filter(static_cast<const uint8_t *>(img), w, h);
-  return spliterate_idat(wr, buf.begin(), buf.size());
+  return compress(buf).fmap([&](auto &buf) {
+    return frk::chunk("IDAT", buf.begin(), buf.size())(wr);
+  });
 }
 
 static constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
