@@ -123,13 +123,15 @@ static constexpr auto read_splt(context &img) {
         return;
       if (buf[6] != 8) // sample depth
         return;
-      if (buf.size() % 6 != 0)
+
+      auto pal_size = buf.size() - 7;
+      if (pal_size % 6 != 0)
         return;
 
-      hai::array<pixed::pixel> res{(buf.size() / 6) - 1};
-      pixed::pixel *pb = reinterpret_cast<pixed::pixel *>(buf.begin()) + 1;
-      for (auto i = 0; i < res.size(); i++) {
-        res[i] = pb[i];
+      hai::array<pixed::pixel> res{pal_size / 6};
+      auto pb = buf.begin() + 7;
+      for (auto i = 0; i < res.size(); i++, pb += 6) {
+        res[i] = *reinterpret_cast<pixed::pixel *>(pb);
       }
       img.palette = traits::move(res);
     });
