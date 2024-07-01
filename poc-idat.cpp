@@ -16,7 +16,7 @@ int main() {
   dec_ctx img{};
   yoyo::file_reader::open("blank.png")
       .fpeek(frk::assert("PNG"))
-      .fpeek(frk::take("IHDR", read_ihdr(img)))
+      .fpeek(read_ihdr(img))
       .fpeek(read_idat(img))
       .fpeek(frk::take("IEND"))
       .map(frk::end())

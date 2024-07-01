@@ -25,11 +25,11 @@ mno::req<void> pixed::write_ihdr(yoyo::writer &wr, unsigned w, unsigned h) {
   return frk::chunk("IHDR", ihdr{w, h})(wr);
 }
 
-mno::req<void> pixed::read_ihdr(yoyo::reader &r, dec_ctx &ctx) {
+static mno::req<void> read_ihdr(yoyo::reader &r, unsigned &w, unsigned &h) {
   return r.read_u32_be()
-      .map([&](auto n) { ctx.w = n; })
+      .map([&](auto n) { w = n; })
       .fmap([&] { return r.read_u32_be(); })
-      .map([&](auto n) { ctx.h = n; })
+      .map([&](auto n) { h = n; })
       .fmap([&] { return r.read_u8(); })
       .assert([](auto bit_depth) { return bit_depth == 8; },
               "unsupported bitdepth")
@@ -44,7 +44,11 @@ mno::req<void> pixed::read_ihdr(yoyo::reader &r, dec_ctx &ctx) {
       .fmap([&](auto) { return r.read_u8(); })
       .assert([](auto interlace) { return interlace == 0; },
               "unsupported interlace")
-      .map([&](auto) {
-        silog::log(silog::debug, "found %dx%d image", ctx.w, ctx.h);
-      });
+      .map([&](auto) { silog::log(silog::debug, "found %dx%d image", w, h); });
+}
+static constexpr auto read_ihdr(unsigned &w, unsigned &h) {
+  return [&](yoyo::subreader r) { return read_ihdr(r, w, h); };
+}
+mno::req<void> pixed::read_ihdr(yoyo::reader &r, dec_ctx &ctx) {
+  return frk::take("IHDR", ::read_ihdr(ctx.w, ctx.h))(r);
 }
