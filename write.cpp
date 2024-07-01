@@ -33,7 +33,11 @@ static constexpr auto write_ihdr(unsigned w, unsigned h) {
   return [=](auto &wr) { return write_ihdr(wr, w, h); };
 }
 
-static constexpr auto adler(const uint8_t *data, unsigned len) {
+static constexpr uint32_t adler(const uint8_t *data, unsigned len) {
+#if 1
+  // Looks like no one cares about this value
+  return 0;
+#else
   static constexpr const auto base = 65521;
   uint32_t s1 = 1;
   uint32_t s2 = 0;
@@ -42,6 +46,7 @@ static constexpr auto adler(const uint8_t *data, unsigned len) {
     s2 = (s2 + s1) % base;
   }
   return (s2 << 16) + s1;
+#endif
 }
 
 static constexpr auto min(auto a, auto b) { return a > b ? b : a; }
