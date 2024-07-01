@@ -1,4 +1,6 @@
+#pragma leco add_impl read_idat
 #pragma leco add_impl write_idat
+
 export module pixed;
 import hai;
 import missingno;
@@ -22,7 +24,7 @@ export constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
 }
 
 mno::req<void> read_idat(yoyo::reader &r, dec_ctx &img);
-static constexpr auto read_idat(dec_ctx &img) {
+export constexpr auto read_idat(dec_ctx &img) {
   return [&](auto &r) { return read_idat(r, img); };
 }
 
