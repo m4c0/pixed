@@ -1,6 +1,7 @@
 module pixed;
 import flate;
 import fork;
+import jute;
 import yoyo;
 import silog;
 
@@ -114,11 +115,33 @@ static constexpr auto read_idat(context &img) {
   return [&](auto &r) { return read_idat(r, img); };
 }
 
+static constexpr auto read_splt(context &img) {
+  return [&](auto &r) {
+    hai::array<char> buf{static_cast<unsigned>(r.raw_size())};
+    return r.read(buf.begin(), buf.size()).map([&] {
+      if (jute::view{"PIXED"} != jute::view::unsafe(buf.begin()))
+        return;
+      if (buf[6] != 8) // sample depth
+        return;
+      if (buf.size() % 6 != 0)
+        return;
+
+      hai::array<pixed::pixel> res{(buf.size() / 6) - 1};
+      pixed::pixel *pb = reinterpret_cast<pixed::pixel *>(buf.begin()) + 1;
+      for (auto i = 0; i < res.size(); i++) {
+        res[i] = pb[i];
+      }
+      img.palette = traits::move(res);
+    });
+  };
+}
+
 mno::req<context> pixed::read(const char *file) {
   context res{};
   return yoyo::file_reader::open(file)
       .fpeek(frk::assert("PNG"))
       .fpeek(read_ihdr(res))
+      .fpeek(frk::take("sPLT", read_splt(res)))
       .fpeek(read_idat(res))
       .fpeek(frk::take("IEND"))
       .map(frk::end())
