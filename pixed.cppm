@@ -1,5 +1,5 @@
-#pragma leco add_impl read_idat
-#pragma leco add_impl write_idat
+#pragma leco add_impl read
+#pragma leco add_impl write
 
 export module pixed;
 import fork;
