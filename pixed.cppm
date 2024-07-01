@@ -20,6 +20,7 @@ static_assert(sizeof(pixel) == 4);
 export struct context {
   unsigned w;
   unsigned h;
+  hai::array<pixel> palette{};
   hai::array<pixel> image{};
 };
 
