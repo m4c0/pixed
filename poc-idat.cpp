@@ -7,7 +7,6 @@ import stubby;
 using namespace pixed;
 
 int main() {
-  dec_ctx img{};
   return pixed::read("blank.png")
       .map([&](auto &img) {
         auto d = reinterpret_cast<stbi::pixel *>(img.image.begin());
