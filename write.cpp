@@ -125,5 +125,7 @@ mno::req<void> pixed::write(const char *file, context &img) {
       .fpeek(write_idat(img.image.begin(), img.w, img.h))
       .fpeek(frk::chunk("IEND"))
       .map(frk::end())
-      .map([&] { silog::log(silog::debug, "done in %dms", w.millis()); });
+      .map([&] {
+        silog::log(silog::debug, "Image created in %dms", w.millis());
+      });
 }
