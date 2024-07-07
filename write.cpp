@@ -4,6 +4,8 @@ import fork;
 import hai;
 import jute;
 import missingno;
+import silog;
+import sitime;
 import traits;
 import yoyo;
 
@@ -115,11 +117,13 @@ static constexpr auto write_splt(const hai::array<pixed::pixel> &pal) {
 }
 
 mno::req<void> pixed::write(const char *file, context &img) {
+  sitime::stopwatch w{};
   return yoyo::file_writer::open(file)
       .fpeek(frk::signature("PNG"))
       .fpeek(write_ihdr(img.w, img.h))
       .fpeek(write_splt(img.palette))
       .fpeek(write_idat(img.image.begin(), img.w, img.h))
       .fpeek(frk::chunk("IEND"))
-      .map(frk::end());
+      .map(frk::end())
+      .map([&] { silog::log(silog::debug, "done in %dms", w.millis()); });
 }
