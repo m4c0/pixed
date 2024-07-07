@@ -1,4 +1,5 @@
 module pixed;
+import flate;
 import fork;
 import hai;
 import jute;
@@ -72,16 +73,8 @@ static auto compress(const hai::array<uint8_t> &data) {
 
   auto res = mno::req{yoyo::memwriter{out}}
                  .fpeek(yoyo::write_u8(0x78)) // CMF
-                 .fpeek(yoyo::write_u8(0x1)); // FLG
-
-  auto *ptr = data.begin();
-  for (auto i = 0; i < blks && res.is_valid(); i++, ptr += part_size) {
-    auto len = (i == blks - 1) ? data.end() - ptr : part_size;
-    res = res.fpeek(yoyo::write_u8(i == blks - 1)) // BHEAD
-              .fpeek(yoyo::write_u16(len))
-              .fpeek(yoyo::write_u16(~len))
-              .fpeek(yoyo::write(ptr, len));
-  }
+                 .fpeek(yoyo::write_u8(0x1))  // FLG
+                 .fpeek(flate::compress(data.begin(), data.size()));
 
   return res.fpeek(yoyo::write_u32_be(adler(data.begin(), data.size())))
       .map([&](auto &) { return traits::move(out); });
