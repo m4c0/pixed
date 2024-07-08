@@ -1,4 +1,5 @@
 #pragma leco app
+export module atlased;
 
 import casein;
 import dotz;
