@@ -57,8 +57,20 @@ static unsigned data(quack::instance *i) {
   return sw * sh + 1;
 }
 
+static void cursor(dotz::ivec2 d) {
+  g_cursor = (g_cursor + d + g_ctx.spr_size) % g_ctx.spr_size;
+  quack::donald::data(::data);
+}
+
 struct init {
   init() {
+    using namespace casein;
+
+    handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
+    handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
+    handle(KEY_DOWN, K_UP, [] { cursor({0, -1}); });
+    handle(KEY_DOWN, K_DOWN, [] { cursor({0, 1}); });
+
     using namespace quack::donald;
 
     app_name("atlas-editor");
