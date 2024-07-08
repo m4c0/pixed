@@ -62,14 +62,28 @@ static void cursor(dotz::ivec2 d) {
   quack::donald::data(::data);
 }
 
+static void open_sprite();
+
+static void open_atlas() {
+  using namespace casein;
+
+  reset_k(KEY_DOWN);
+
+  handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
+  handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
+  handle(KEY_DOWN, K_UP, [] { cursor({0, -1}); });
+  handle(KEY_DOWN, K_DOWN, [] { cursor({0, 1}); });
+  handle(KEY_DOWN, K_ENTER, open_sprite);
+}
+static void open_sprite() {
+  using namespace casein;
+
+  reset_k(KEY_DOWN);
+}
+
 struct init {
   init() {
-    using namespace casein;
-
-    handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
-    handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
-    handle(KEY_DOWN, K_UP, [] { cursor({0, -1}); });
-    handle(KEY_DOWN, K_DOWN, [] { cursor({0, 1}); });
+    open_atlas();
 
     using namespace quack::donald;
 
