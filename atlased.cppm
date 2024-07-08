@@ -14,7 +14,7 @@ void atlas();
 void sprite();
 } // namespace atlased::modes
 
-static pixed::context g_ctx = [] {
+pixed::context g_ctx = [] {
   auto res = pixed::create(256, 256);
   res.spr_size = {16, 16};
   for (auto &p : res.image) {
