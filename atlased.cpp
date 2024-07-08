@@ -79,6 +79,8 @@ static void open_sprite() {
   using namespace casein;
 
   reset_k(KEY_DOWN);
+
+  handle(KEY_DOWN, K_ESCAPE, open_atlas);
 }
 
 struct init {
