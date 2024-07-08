@@ -1,5 +1,6 @@
 #pragma leco app
 #pragma leco add_impl atlased_atlasmode
+#pragma leco add_impl atlased_sprmode
 export module atlased;
 
 import casein;
@@ -31,14 +32,6 @@ static void atlas(voo::h2l_image *img) {
 static voo::updater<voo::h2l_image> *atlas(voo::device_and_queue *dq) {
   return new voo::updater<voo::h2l_image>{
       dq->queue(), atlas, dq->physical_device(), g_ctx.w, g_ctx.h};
-}
-
-void atlased::modes::sprite() {
-  using namespace casein;
-
-  reset_k(KEY_DOWN);
-
-  handle(KEY_DOWN, K_ESCAPE, modes::atlas);
 }
 
 struct init {
