@@ -1,12 +1,14 @@
 #pragma leco app
 
 import casein;
+import dotz;
 import pixed;
 import quack;
 import voo;
 
 static pixed::context g_ctx = [] {
   auto res = pixed::create(256, 256);
+  res.spr_size = {16, 16};
   for (auto &p : res.image) {
     p = {10, 40, 120, 255};
   }
@@ -25,14 +27,26 @@ static voo::updater<voo::h2l_image> *atlas(voo::device_and_queue *dq) {
 }
 
 static unsigned data(quack::instance *i) {
-  i->colour = {};
-  i->multiplier = {1, 1, 1, 1};
-  i->position = {0, 0};
-  i->size = {1, 1};
-  i->uv0 = {0, 0};
-  i->uv1 = {1, 1};
-  i->rotation = {};
-  return 1;
+  auto [sw, sh] = g_ctx.spr_size;
+  dotz::vec2 sz = g_ctx.spr_size;
+
+  quack::donald::push_constants({
+      .grid_pos = sz / 2.0f,
+      .grid_size = sz,
+  });
+
+  for (dotz::vec2 p{}; p.y < sh; p.y++) {
+    for (p.x = 0; p.x < sw; p.x++) {
+      *i++ = {
+          .position = p,
+          .size = dotz::vec2(0.9f),
+          .uv0 = p / sz,
+          .uv1 = (p + 1) / sz,
+          .multiplier = {1, 1, 1, 1},
+      };
+    }
+  }
+  return sw * sh;
 }
 
 struct init {
@@ -43,10 +57,6 @@ struct init {
     max_quads(10240);
 
     clear_colour({});
-    push_constants({
-        .grid_pos = {0.5f, 0.5f},
-        .grid_size = {1, 1},
-    });
     atlas(::atlas);
     data(::data);
   }

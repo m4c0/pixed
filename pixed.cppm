@@ -2,6 +2,7 @@
 #pragma leco add_impl write
 
 export module pixed;
+import dotz;
 import hai;
 import missingno;
 import traits;
@@ -20,6 +21,7 @@ static_assert(sizeof(pixel) == 4);
 export struct context {
   unsigned w;
   unsigned h;
+  dotz::ivec2 spr_size{};
   hai::array<pixel> palette{};
   hai::array<pixel> image{};
 };
