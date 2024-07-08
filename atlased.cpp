@@ -15,6 +15,8 @@ static pixed::context g_ctx = [] {
   return res;
 }();
 
+static dotz::ivec2 g_cursor{};
+
 static void atlas(voo::h2l_image *img) {
   voo::mapmem m{img->host_memory()};
   auto *c = static_cast<pixed::pixel *>(*m);
@@ -35,10 +37,16 @@ static unsigned data(quack::instance *i) {
       .grid_size = sz,
   });
 
+  *i++ = {
+      .position = g_cursor,
+      .size = {1, 1},
+      .colour = {1, 0, 0, 1},
+  };
+
   for (dotz::vec2 p{}; p.y < sh; p.y++) {
     for (p.x = 0; p.x < sw; p.x++) {
       *i++ = {
-          .position = p,
+          .position = p + 0.05f,
           .size = dotz::vec2(0.9f),
           .uv0 = p / sz,
           .uv1 = (p + 1) / sz,
@@ -46,7 +54,7 @@ static unsigned data(quack::instance *i) {
       };
     }
   }
-  return sw * sh;
+  return sw * sh + 1;
 }
 
 struct init {
