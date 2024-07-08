@@ -3,8 +3,9 @@ module atlased;
 static dotz::ivec2 g_cursor{};
 
 static unsigned data(quack::instance *i) {
-  auto [sw, sh] = g_ctx.spr_size;
-  dotz::vec2 sz = g_ctx.spr_size;
+  auto grid_size = dotz::ivec2{g_ctx.w, g_ctx.h} / g_ctx.spr_size;
+  auto [sw, sh] = grid_size;
+  dotz::vec2 sz = grid_size;
 
   quack::donald::push_constants({
       .grid_pos = sz / 2.0f,
