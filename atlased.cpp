@@ -1,13 +1,21 @@
 #pragma leco app
 
 import casein;
+import pixed;
 import quack;
 import voo;
 
-static void atlas(voo::h2l_image *img) {}
+static pixed::context g_ctx = pixed::create(256, 256);
+
+static void atlas(voo::h2l_image *img) {
+  voo::mapmem m{img->host_memory()};
+  auto *c = static_cast<pixed::pixel *>(*m);
+  for (auto &p : g_ctx.image)
+    *c++ = p;
+}
 
 static unsigned data(quack::instance *i) {
-  i->colour = {1, 1, 1, 1};
+  i->colour = {};
   i->multiplier = {1, 1, 1, 1};
   i->position = {0, 0};
   i->size = {1, 1};
@@ -31,7 +39,7 @@ struct init {
     });
     atlas([](auto dq) {
       return new voo::updater<voo::h2l_image>{
-          dq->queue(), atlas, dq->physical_device(), 256U, 256U};
+          dq->queue(), atlas, dq->physical_device(), g_ctx.w, g_ctx.h};
     });
     data(::data);
   }
