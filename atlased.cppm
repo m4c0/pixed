@@ -41,7 +41,11 @@ static voo::updater<voo::h2l_image> *atlas(voo::device_and_queue *dq) {
   return new voo::updater<voo::h2l_image>{
       dq->queue(), atlas, dq->physical_device(), g_ctx.w, g_ctx.h};
 }
+
 namespace atlased {
+inline dotz::ivec2 image_size() { return dotz::ivec2{g_ctx.w, g_ctx.h}; }
+inline dotz::ivec2 grid_size() { return image_size() / g_ctx.spr_size; }
+
 void load_atlas() { quack::donald::atlas(::atlas); }
 } // namespace atlased
 

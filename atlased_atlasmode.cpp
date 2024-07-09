@@ -2,12 +2,9 @@ module atlased;
 
 static dotz::ivec2 g_cursor{};
 
-static dotz::ivec2 image_size() { return dotz::ivec2{g_ctx.w, g_ctx.h}; }
-static dotz::ivec2 grid_size() { return image_size() / g_ctx.spr_size; }
-
 static unsigned data(quack::instance *i) {
-  auto [sw, sh] = grid_size();
-  dotz::vec2 sz = grid_size();
+  auto [sw, sh] = atlased::grid_size();
+  dotz::vec2 sz = atlased::grid_size();
 
   quack::donald::push_constants({
       .grid_pos = sz / 2.0f,
@@ -35,7 +32,7 @@ static unsigned data(quack::instance *i) {
 }
 
 static void cursor(dotz::ivec2 d) {
-  auto gs = grid_size();
+  auto gs = atlased::grid_size();
   g_cursor = (g_cursor + d + gs) % gs;
   quack::donald::data(::data);
 }
@@ -43,9 +40,9 @@ static void cursor(dotz::ivec2 d) {
 static void spr_size(dotz::ivec2 d) {
   do {
     g_ctx.spr_size = g_ctx.spr_size + d;
-  } while (dotz::sq_length(image_size() % g_ctx.spr_size) != 0);
+  } while (dotz::sq_length(atlased::image_size() % g_ctx.spr_size) != 0);
 
-  g_cursor = dotz::min(g_cursor, grid_size() - 1);
+  g_cursor = dotz::min(g_cursor, atlased::grid_size() - 1);
   quack::donald::data(::data);
 }
 
