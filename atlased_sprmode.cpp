@@ -1,6 +1,7 @@
 module atlased;
 
 static dotz::ivec2 g_cursor{};
+static unsigned g_pal{};
 
 static unsigned data(quack::instance *i) {
   auto [sw, sh] = g_ctx.spr_size;
@@ -11,10 +12,17 @@ static unsigned data(quack::instance *i) {
       .grid_size = sz,
   });
 
+  dotz::vec4 colour{255, 255, 255, 255};
+  if (g_ctx.palette.size() > 0) {
+    auto pal = g_ctx.palette[g_pal];
+    colour = {pal.r, pal.g, pal.b, 255};
+  }
+  colour = colour / 256.0;
+
   *i++ = {
       .position = g_cursor,
       .size = {1, 1},
-      .colour = {1, 0, 0, 1},
+      .colour = colour,
   };
 
   for (dotz::vec2 p{}; p.y < sh; p.y++) {
@@ -36,10 +44,21 @@ static void cursor(dotz::ivec2 d) {
   quack::donald::data(::data);
 }
 
+static void palette(int d) {
+  if (g_ctx.palette.size() == 0)
+    return;
+
+  g_pal = (g_pal + d) % g_ctx.palette.size();
+  quack::donald::data(::data);
+}
+
 void atlased::modes::sprite() {
   using namespace casein;
 
   reset_k(KEY_DOWN);
+
+  handle(KEY_DOWN, K_Q, [] { palette(-1); });
+  handle(KEY_DOWN, K_W, [] { palette(1); });
 
   handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
   handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
