@@ -30,8 +30,8 @@ static unsigned data(quack::instance *i) {
       *i++ = {
           .position = p + 0.05f,
           .size = dotz::vec2(0.9f),
-          .uv0 = p / sz,
-          .uv1 = (p + 1) / sz,
+          .uv0 = p / atlased::image_size(),
+          .uv1 = (p + 1) / atlased::image_size(),
           .multiplier = {1, 1, 1, 1},
       };
     }
