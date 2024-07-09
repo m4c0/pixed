@@ -23,7 +23,7 @@ pixed::context g_ctx = [] {
   }
 
   res.palette.set_capacity(4);
-  res.palette[0] = {0, 0, 0, 0};
+  res.palette[0] = {0, 0, 0, 255};
   res.palette[1] = {255, 255, 255, 255};
   res.palette[2] = {10, 40, 120, 255};
   res.palette[3] = {128, 128, 128, 255};
@@ -41,6 +41,9 @@ static voo::updater<voo::h2l_image> *atlas(voo::device_and_queue *dq) {
   return new voo::updater<voo::h2l_image>{
       dq->queue(), atlas, dq->physical_device(), g_ctx.w, g_ctx.h};
 }
+namespace atlased {
+void load_atlas() { quack::donald::atlas(::atlas); }
+} // namespace atlased
 
 struct init {
   init() {
@@ -50,7 +53,7 @@ struct init {
     max_quads(10240);
 
     clear_colour({});
-    atlas(::atlas);
+    atlased::load_atlas();
 
     atlased::modes::atlas();
   }

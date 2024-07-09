@@ -45,11 +45,14 @@ static void cursor(dotz::ivec2 d) {
 }
 
 static void palette(int d) {
-  if (g_ctx.palette.size() == 0)
-    return;
-
   g_pal = (g_pal + d) % g_ctx.palette.size();
   quack::donald::data(::data);
+}
+
+static void tap() {
+  auto p = g_cursor.y * g_ctx.w + g_cursor.x;
+  g_ctx.image[p] = g_ctx.palette[g_pal];
+  atlased::load_atlas();
 }
 
 void atlased::modes::sprite() {
@@ -57,8 +60,11 @@ void atlased::modes::sprite() {
 
   reset_k(KEY_DOWN);
 
-  handle(KEY_DOWN, K_Q, [] { palette(-1); });
-  handle(KEY_DOWN, K_W, [] { palette(1); });
+  if (g_ctx.palette.size() != 0) {
+    handle(KEY_DOWN, K_Q, [] { palette(-1); });
+    handle(KEY_DOWN, K_W, [] { palette(1); });
+    handle(KEY_DOWN, K_SPACE, tap);
+  }
 
   handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
   handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
