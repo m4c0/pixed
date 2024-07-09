@@ -1,6 +1,7 @@
 module atlased;
 
 static dotz::ivec2 g_cursor{};
+static dotz::ivec2 g_sprite{};
 static unsigned g_pal{};
 
 static unsigned data(quack::instance *i) {
@@ -27,11 +28,12 @@ static unsigned data(quack::instance *i) {
 
   for (dotz::vec2 p{}; p.y < sh; p.y++) {
     for (p.x = 0; p.x < sw; p.x++) {
+      auto uv = g_sprite + p;
       *i++ = {
           .position = p + 0.05f,
           .size = dotz::vec2(0.9f),
-          .uv0 = p / atlased::image_size(),
-          .uv1 = (p + 1) / atlased::image_size(),
+          .uv0 = uv / atlased::image_size(),
+          .uv1 = (uv + 1) / atlased::image_size(),
           .multiplier = {1, 1, 1, 1},
       };
     }
@@ -50,13 +52,16 @@ static void palette(int d) {
 }
 
 static void tap() {
-  auto p = g_cursor.y * g_ctx.w + g_cursor.x;
+  auto c = g_sprite + g_cursor;
+  auto p = c.y * g_ctx.w + c.x;
   g_ctx.image[p] = g_ctx.palette[g_pal];
   atlased::load_atlas();
 }
 
-void atlased::modes::sprite() {
+void atlased::modes::sprite(dotz::ivec2 sel) {
   using namespace casein;
+
+  g_sprite = sel * g_ctx.spr_size;
 
   reset_k(KEY_DOWN);
 
@@ -74,4 +79,3 @@ void atlased::modes::sprite() {
 
   quack::donald::data(::data);
 }
-

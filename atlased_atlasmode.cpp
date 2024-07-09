@@ -60,7 +60,7 @@ void atlased::modes::atlas() {
   handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
   handle(KEY_DOWN, K_UP, [] { cursor({0, -1}); });
   handle(KEY_DOWN, K_DOWN, [] { cursor({0, 1}); });
-  handle(KEY_DOWN, K_ENTER, modes::sprite);
+  handle(KEY_DOWN, K_ENTER, [] { modes::sprite(g_cursor); });
 
   quack::donald::data(::data);
 }

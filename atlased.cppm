@@ -11,7 +11,7 @@ import voo;
 
 namespace atlased::modes {
 void atlas();
-void sprite();
+void sprite(dotz::ivec2 p);
 } // namespace atlased::modes
 
 pixed::context g_ctx = [] {
