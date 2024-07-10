@@ -81,8 +81,8 @@ static constexpr auto deflate(context &img, hai::varray<uint8_t> &zlib) {
     yoyo::memreader r{zlib.begin(), zlib.size()};
     flate::bitstream b{&r};
     return r.read_u16()
-        .assert([](auto id) { return id == 0x0178; },
-                "only 32k window deflate is supported")
+        .assert([](auto id) { return id & 0x0008; },
+                "only deflate is supported")
         .fmap([&](auto) { return flate::huffman_reader::create(&b); })
         .fmap([&](auto &hr) {
           mno::req<void> res{};
