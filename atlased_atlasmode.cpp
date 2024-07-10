@@ -1,4 +1,6 @@
 module atlased;
+import silog;
+import traits;
 
 static dotz::ivec2 g_cursor{};
 
@@ -46,9 +48,23 @@ static void spr_size(dotz::ivec2 d) {
   quack::donald::data(::data);
 }
 
+static void files_drop() {
+  for (auto &file : casein::dropped_files) {
+    pixed::read(file.begin())
+        .map([&](auto &ctx) {
+          g_ctx = traits::move(ctx);
+          if (g_ctx.spr_size.x == 0 || g_ctx.spr_size == 0)
+            g_ctx.spr_size = {16, 16};
+          silog::log(silog::info, "Image loaded: [%s]", file.begin());
+        })
+        .log_error();
+  }
+}
+
 void atlased::modes::atlas() {
   using namespace casein;
 
+  handle(FILES_DROP, files_drop);
   reset_k(KEY_DOWN);
 
   handle(KEY_DOWN, K_A, [] { spr_size({1, 0}); });

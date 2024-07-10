@@ -63,6 +63,7 @@ void atlased::modes::sprite(dotz::ivec2 sel) {
 
   g_sprite = sel * g_ctx.spr_size;
 
+  handle(FILES_DROP, nullptr);
   reset_k(KEY_DOWN);
 
   if (g_ctx.palette.size() != 0) {
