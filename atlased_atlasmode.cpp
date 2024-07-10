@@ -52,11 +52,16 @@ static void files_drop() {
   for (auto &file : casein::dropped_files) {
     pixed::read(file.begin())
         .map([&](auto &ctx) {
-          g_ctx = traits::move(ctx);
-          if (g_ctx.spr_size.x == 0 || g_ctx.spr_size == 0)
-            g_ctx.spr_size = {16, 16};
+          if (ctx.spr_size.x == 0 || ctx.spr_size == 0)
+            ctx.spr_size = {16, 16};
 
+          auto [sw, sh] = atlased::grid_size();
+          silog::log(silog::info, "Number of sprites: %dx%d (total: %d)", sw,
+                     sh, sw * sh);
+
+          g_ctx = traits::move(ctx);
           atlased::load_atlas();
+
           silog::log(silog::info, "Image loaded: [%s]", file.begin());
         })
         .log_error();
