@@ -3,6 +3,7 @@ import silog;
 import traits;
 
 static dotz::ivec2 g_cursor{};
+static dotz::ivec2 g_yank{};
 
 static unsigned data(quack::instance *i) {
   auto [sw, sh] = atlased::grid_size();
@@ -69,6 +70,17 @@ static void files_drop() {
   }
 }
 
+static void put() {
+  for (dotz::ivec2 p{}; p.y < g_ctx.spr_size.y; p.y++) {
+    for (p.x = 0; p.x < g_ctx.spr_size.x; p.x++) {
+      auto yank = pixed::at(g_ctx, g_yank * g_ctx.spr_size + p);
+      auto &cursor = pixed::at(g_ctx, g_cursor * g_ctx.spr_size + p);
+      cursor = yank;
+    }
+  }
+  atlased::load_atlas();
+}
+
 void atlased::modes::atlas() {
   using namespace casein;
 
@@ -79,6 +91,9 @@ void atlased::modes::atlas() {
   handle(KEY_DOWN, K_D, [] { spr_size({-1, 0}); });
   handle(KEY_DOWN, K_W, [] { spr_size({0, 1}); });
   handle(KEY_DOWN, K_S, [] { spr_size({0, -1}); });
+
+  handle(KEY_DOWN, K_Y, [] { g_yank = g_cursor; });
+  handle(KEY_DOWN, K_P, put);
 
   handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
   handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });

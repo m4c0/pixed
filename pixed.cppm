@@ -33,9 +33,13 @@ export context create(unsigned w, unsigned h) {
 export mno::req<void> write(const char *file, context &img);
 export mno::req<context> read(const char *file);
 
-export void set(context &ctx, int x, int y, pixel p) {
+export pixel &at(context &ctx, int x, int y) {
+  static pixel dummy{};
+
   if (x < 0 || x >= ctx.w || y < 0 || y >= ctx.h)
-    return;
-  ctx.image[y * ctx.w + x] = p;
+    return dummy;
+
+  return ctx.image[y * ctx.w + x];
 }
+export pixel &at(context &ctx, dotz::ivec2 p) { return at(ctx, p.x, p.y); }
 } // namespace pixed
