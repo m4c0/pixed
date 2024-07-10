@@ -55,6 +55,8 @@ static void files_drop() {
           g_ctx = traits::move(ctx);
           if (g_ctx.spr_size.x == 0 || g_ctx.spr_size == 0)
             g_ctx.spr_size = {16, 16};
+
+          atlased::load_atlas();
           silog::log(silog::info, "Image loaded: [%s]", file.begin());
         })
         .log_error();
