@@ -1,5 +1,6 @@
 #pragma leco app
 #pragma leco add_impl atlased_atlasmode
+#pragma leco add_impl atlased_config
 #pragma leco add_impl atlased_sprmode
 export module atlased;
 
@@ -13,6 +14,10 @@ namespace atlased::modes {
 void atlas();
 void sprite(dotz::ivec2 p);
 } // namespace atlased::modes
+
+namespace atlased::config {
+void load();
+}
 
 pixed::context g_ctx = [] {
   auto res = pixed::create(256, 256);
@@ -57,8 +62,9 @@ struct init {
     max_quads(10240);
 
     clear_colour({});
-    atlased::load_atlas();
 
+    atlased::config::load();
+    atlased::load_atlas();
     atlased::modes::atlas();
   }
 } i;
