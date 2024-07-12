@@ -6,6 +6,7 @@ export module atlased;
 
 import casein;
 import dotz;
+import jute;
 import pixed;
 import quack;
 import voo;
@@ -17,6 +18,7 @@ void sprite(dotz::ivec2 p);
 
 namespace atlased::config {
 void load();
+void set_current_file(jute::view);
 }
 
 pixed::context g_ctx = [] {

@@ -63,6 +63,7 @@ static void files_drop() {
           g_ctx = traits::move(ctx);
           atlased::load_atlas();
           quack::donald::data(::data);
+          atlased::config::set_current_file(file);
 
           silog::log(silog::info, "Image loaded: [%s]", file.begin());
         })
