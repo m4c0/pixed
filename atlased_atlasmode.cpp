@@ -82,24 +82,26 @@ static void put() {
   atlased::load_atlas();
 }
 
+static void (*g_arrow_fn)(dotz::ivec2 d);
+
 void atlased::modes::atlas() {
   using namespace casein;
+
+  g_arrow_fn = cursor;
 
   handle(FILES_DROP, files_drop);
   reset_k(KEY_DOWN);
 
-  handle(KEY_DOWN, K_A, [] { spr_size({1, 0}); });
-  handle(KEY_DOWN, K_D, [] { spr_size({-1, 0}); });
-  handle(KEY_DOWN, K_W, [] { spr_size({0, 1}); });
-  handle(KEY_DOWN, K_S, [] { spr_size({0, -1}); });
+  handle(KEY_DOWN, K_DOT, [] { g_arrow_fn = spr_size; });
+  handle(KEY_UP, K_DOT, [] { g_arrow_fn = cursor; });
 
   handle(KEY_DOWN, K_Y, [] { g_yank = g_cursor; });
   handle(KEY_DOWN, K_P, put);
 
-  handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
-  handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
-  handle(KEY_DOWN, K_UP, [] { cursor({0, -1}); });
-  handle(KEY_DOWN, K_DOWN, [] { cursor({0, 1}); });
+  handle(KEY_DOWN, K_LEFT, [] { g_arrow_fn({-1, 0}); });
+  handle(KEY_DOWN, K_RIGHT, [] { g_arrow_fn({1, 0}); });
+  handle(KEY_DOWN, K_UP, [] { g_arrow_fn({0, -1}); });
+  handle(KEY_DOWN, K_DOWN, [] { g_arrow_fn({0, 1}); });
   handle(KEY_DOWN, K_ENTER, [] { modes::sprite(g_cursor); });
 
   quack::donald::data(::data);
