@@ -16,6 +16,9 @@ static auto read_image() {
   return pixed::read(g_cur_file.begin())
       .map([](auto &ctx) {
         g_ctx = traits::move(ctx);
+        if (g_ctx.spr_size.x == 0 || g_ctx.spr_size.y == 0) {
+          g_ctx.spr_size = dotz::ivec2{8};
+        }
         silog::log(silog::info, "Loaded [%s] based on config",
                    g_cur_file.begin());
       })
