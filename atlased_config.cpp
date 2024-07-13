@@ -44,6 +44,7 @@ static void write() {
       .take(silog::log_failure);
 }
 
+const char *atlased::config::current_file() { return g_cur_file.begin(); }
 void atlased::config::set_current_file(jute::view name) {
   g_cur_file = name.cstr();
   write();

@@ -18,6 +18,7 @@ void sprite(dotz::ivec2 p);
 
 namespace atlased::config {
 void load();
+const char *current_file();
 void set_current_file(jute::view);
 }
 

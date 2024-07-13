@@ -26,12 +26,12 @@ export struct context {
   hai::array<pixel> image{};
 };
 
-export context create(unsigned w, unsigned h) {
+export [[nodiscard]] context create(unsigned w, unsigned h) {
   return {.w = w, .h = h, .image{w * h}};
 }
 
-export mno::req<void> write(const char *file, context &img);
-export mno::req<context> read(const char *file);
+export [[nodiscard]] mno::req<void> write(const char *file, context &img);
+export [[nodiscard]] mno::req<context> read(const char *file);
 
 export pixel &at(context &ctx, int x, int y) {
   static pixel dummy{};

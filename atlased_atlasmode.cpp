@@ -82,6 +82,22 @@ static void put() {
   atlased::load_atlas();
 }
 
+static void write() {
+  const char *fn = atlased::config::current_file();
+  if (!fn || !*fn)
+    fn = "atlas.png";
+
+  g_saving = 1;
+  quack::donald::data(::data);
+  pixed::write(fn, g_ctx)
+      .map([] {
+        silog::log(silog::info, "Image written successfully");
+        g_saving = 0;
+        quack::donald::data(::data);
+      })
+      .log_error();
+}
+
 static void (*g_arrow_fn)(dotz::ivec2 d);
 
 void atlased::modes::atlas() {
@@ -94,6 +110,8 @@ void atlased::modes::atlas() {
 
   handle(KEY_DOWN, K_DOT, [] { g_arrow_fn = spr_size; });
   handle(KEY_UP, K_DOT, [] { g_arrow_fn = cursor; });
+
+  handle(KEY_DOWN, K_W, write);
 
   handle(KEY_DOWN, K_Y, [] { g_yank = g_cursor; });
   handle(KEY_DOWN, K_P, put);
