@@ -53,22 +53,8 @@ static void spr_size(dotz::ivec2 d) {
 
 static void files_drop() {
   for (auto &file : casein::dropped_files) {
-    pixed::read(file.begin())
-        .map([&](auto &ctx) {
-          if (ctx.spr_size.x == 0 || ctx.spr_size == 0)
-            ctx.spr_size = {16, 16};
-
-          auto [sw, sh] = atlased::grid_size();
-          silog::log(silog::info, "Number of sprites: %dx%d (total: %d)", sw,
-                     sh, sw * sh);
-
-          g_ctx = traits::move(ctx);
-          atlased::load_atlas();
-          quack::donald::data(::data);
-          atlased::config::set_current_file(file);
-
-          silog::log(silog::info, "Image loaded: [%s]", file.begin());
-        })
+    atlased::config::set_current_file(file)
+        .map([] { quack::donald::data(::data); })
         .log_error();
   }
 }
@@ -84,6 +70,11 @@ static void put() {
   atlased::load_atlas();
 }
 
+static void read() {
+  auto fn = atlased::config::current_file();
+  atlased::config::set_current_file(jute::view::unsafe(fn)).log_error();
+  quack::donald::data(::data);
+}
 static void write() {
   const char *fn = atlased::config::current_file();
   if (!fn || !*fn)
@@ -113,6 +104,7 @@ void atlased::modes::atlas() {
   handle(KEY_DOWN, K_DOT, [] { g_arrow_fn = spr_size; });
   handle(KEY_UP, K_DOT, [] { g_arrow_fn = cursor; });
 
+  handle(KEY_DOWN, K_E, read);
   handle(KEY_DOWN, K_W, write);
 
   handle(KEY_DOWN, K_Y, [] { g_yank = g_cursor; });

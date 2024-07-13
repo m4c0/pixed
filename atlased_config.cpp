@@ -8,34 +8,42 @@ import yoyo;
 
 static hai::cstr g_cur_file{};
 
-static auto read_cstr(yoyo::subreader sr) {
-  g_cur_file = hai::cstr{static_cast<unsigned>(sr.raw_size())};
-  return sr.read(g_cur_file.begin(), g_cur_file.size());
-}
-static auto read_image() {
-  return pixed::read(g_cur_file.begin())
-      .map([](auto &ctx) {
+static auto read_image(jute::view file) {
+  auto cstr = file.cstr();
+  return pixed::read(cstr.begin())
+      .map([&](auto &ctx) {
+        if (ctx.spr_size.x == 0 || ctx.spr_size.y == 0)
+          ctx.spr_size = {16, 16};
+
         g_ctx = traits::move(ctx);
-        if (g_ctx.spr_size.x == 0 || g_ctx.spr_size.y == 0) {
-          g_ctx.spr_size = dotz::ivec2{8};
-        }
-        silog::log(silog::info, "Loaded [%s] based on config",
-                   g_cur_file.begin());
+
+        g_cur_file = traits::move(cstr);
+
+        auto [sw, sh] = atlased::grid_size();
+        silog::log(silog::info, "Number of sprites: %dx%d (total: %d)", sw, sh,
+                   sw * sh);
+
+        atlased::load_atlas();
+
+        silog::log(silog::info, "Image loaded [%s]", g_cur_file.begin());
       })
       .trace("loading image from config file");
+}
+static auto read_curfile(yoyo::subreader sr) {
+  auto buf = hai::cstr{static_cast<unsigned>(sr.raw_size())};
+  return sr.read(buf.begin(), buf.size()).fmap([&] { return read_image(buf); });
 }
 
 void atlased::config::load() {
   buoy::open_for_reading("pixed", "atlased")
       .fpeek(frk::assert("PXD"))
-      .fpeek(frk::take("fILE", read_cstr))
+      .fpeek(frk::take("fILE", read_curfile))
       .map(frk::end())
-      .fmap(read_image)
       .trace("loading atlased config")
       .take(silog::log_failure);
 }
 
-static void write() {
+static void write_config() {
   buoy::open_for_writing("pixed", "atlased")
       .fpeek(frk::signature("PXD"))
       .fpeek(frk::chunk("fILE", g_cur_file.begin(), g_cur_file.size()))
@@ -45,7 +53,6 @@ static void write() {
 }
 
 const char *atlased::config::current_file() { return g_cur_file.begin(); }
-void atlased::config::set_current_file(jute::view name) {
-  g_cur_file = name.cstr();
-  write();
+mno::req<void> atlased::config::set_current_file(jute::view name) {
+  return read_image(name).map(write_config);
 }
