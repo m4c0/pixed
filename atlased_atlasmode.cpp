@@ -4,6 +4,7 @@ import traits;
 
 static dotz::ivec2 g_cursor{};
 static dotz::ivec2 g_yank{};
+static bool g_saving{};
 
 static unsigned data(quack::instance *i) {
   auto [sw, sh] = atlased::grid_size();
@@ -14,11 +15,12 @@ static unsigned data(quack::instance *i) {
       .grid_size = sz,
   });
 
-  *i++ = {
-      .position = g_cursor,
-      .size = {1, 1},
-      .colour = {1, 0, 0, 1},
-  };
+  if (!g_saving)
+    *i++ = {
+        .position = g_cursor,
+        .size = {1, 1},
+        .colour = {1, 0, 0, 1},
+    };
 
   for (dotz::vec2 p{}; p.y < sh; p.y++) {
     for (p.x = 0; p.x < sw; p.x++) {
