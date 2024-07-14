@@ -163,20 +163,13 @@ static constexpr auto read_splt(context &img) {
   };
 }
 
-static constexpr auto set(auto &v) {
-  return [&](auto n) {
-    v = n;
-    return mno::req<void>{};
-  };
-}
-
 mno::req<context> pixed::read(const char *file) {
   context res{};
   return yoyo::file_reader::open(file)
       .fpeek(frk::assert("PNG"))
       .fpeek(read_ihdr(res))
       .fpeek(frk::take("sPLT", read_splt(res)))
-      .fpeek(frk::take<dotz::ivec2>("spSZ", set(res.spr_size)))
+      .fpeek(frk::take("spSZ", &res.spr_size))
       .fpeek(read_idat(res))
       .fpeek(frk::take("IEND"))
       .map(frk::end())
