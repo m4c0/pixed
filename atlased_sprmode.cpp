@@ -15,12 +15,16 @@ static unsigned data(quack::instance *i) {
   });
 
   dotz::vec4 colour{g_brush.r, g_brush.g, g_brush.b, 255};
-  colour = colour / 256.0;
+  *i++ = {
+      .position = {-1, 0},
+      .size = {1, 1},
+      .colour = colour / 256.0,
+  };
 
   *i++ = {
       .position = g_cursor,
       .size = {1, 1},
-      .colour = colour,
+      .colour = {1, 1, 1, 1},
   };
 
   for (dotz::vec2 p{}; p.y < sh; p.y++) {
