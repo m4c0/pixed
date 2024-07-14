@@ -1,6 +1,7 @@
 #pragma leco app
 #pragma leco add_impl atlased_atlasmode
 #pragma leco add_impl atlased_config
+#pragma leco add_impl atlased_colourmode
 #pragma leco add_impl atlased_sprmode
 export module atlased;
 
@@ -14,7 +15,9 @@ import voo;
 
 namespace atlased::modes {
 void atlas();
+void colour(pixed::pixel *p, unsigned (*fn)(quack::instance *));
 void sprite(dotz::ivec2 p);
+void sprite();
 } // namespace atlased::modes
 
 namespace atlased::config {

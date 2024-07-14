@@ -35,7 +35,7 @@ static unsigned data(quack::instance *i) {
   });
   auto pp = i;
 
-  draw_brush(g_brush, {-3, 0}, i);
+  draw_brush(g_brush, {-3, static_cast<int>(g_pal)}, i);
 
   for (auto idx = 0; idx < g_ctx.palette.size(); idx++) {
     draw_brush(g_ctx.palette[idx], {-2, idx}, i);
@@ -96,10 +96,15 @@ static void yank() {
 }
 
 void atlased::modes::sprite(dotz::ivec2 sel) {
-  using namespace casein;
-
   g_area = false;
   g_sprite = sel * g_ctx.spr_size;
+  g_pal = 0;
+
+  sprite();
+}
+
+void atlased::modes::sprite() {
+  using namespace casein;
 
   handle(FILES_DROP, nullptr);
   reset_k(KEY_DOWN);
@@ -107,11 +112,12 @@ void atlased::modes::sprite(dotz::ivec2 sel) {
   if (g_ctx.palette.size() != 0) {
     handle(KEY_DOWN, K_Q, [] { palette(-1); });
     handle(KEY_DOWN, K_W, [] { palette(1); });
-    g_pal = 0;
   }
 
   handle(KEY_DOWN, K_Y, yank);
   handle(KEY_DOWN, K_SPACE, tap);
+
+  handle(KEY_DOWN, K_COMMA, [] { atlased::modes::colour(&g_brush, ::data); });
 
   handle(KEY_DOWN, K_V, [] { g_area = true; });
   handle(KEY_UP, K_V, [] { g_area = false; });
