@@ -4,7 +4,7 @@ static dotz::ivec2 g_cursor{};
 static dotz::ivec2 g_cursor_e{};
 static dotz::ivec2 g_sprite{};
 static unsigned g_pal{};
-static pixed::pixel g_brush{};
+static pixed::pixel g_brush{255, 255, 255, 255};
 static bool g_area{};
 
 static auto area() {
@@ -14,6 +14,15 @@ static auto area() {
     dotz::ivec2 s, e;
   };
   return pair{s, e};
+}
+
+static void draw_brush(pixed::pixel bruh, dotz::vec2 pos, quack::instance *&i) {
+  dotz::vec4 colour{bruh.r, bruh.g, bruh.b, bruh.a};
+  *i++ = {
+      .position = pos,
+      .size = {1, 1},
+      .colour = colour / 256.0,
+  };
 }
 
 static unsigned data(quack::instance *i) {
@@ -26,21 +35,10 @@ static unsigned data(quack::instance *i) {
   });
   auto pp = i;
 
-  dotz::vec4 colour{g_brush.r, g_brush.g, g_brush.b, 255};
-  *i++ = {
-      .position = {-3, 0},
-      .size = {1, 1},
-      .colour = colour / 256.0,
-  };
+  draw_brush(g_brush, {-3, 0}, i);
 
   for (auto idx = 0; idx < g_ctx.palette.size(); idx++) {
-    auto pal = g_ctx.palette[idx];
-    dotz::vec4 colour{pal.r, pal.g, pal.b, 255};
-    *i++ = {
-        .position = {-2, idx},
-        .size = {1, 1},
-        .colour = colour / 256.0,
-    };
+    draw_brush(g_ctx.palette[idx], {-2, idx}, i);
   }
 
   auto [s, e] = area();
@@ -109,10 +107,7 @@ void atlased::modes::sprite(dotz::ivec2 sel) {
   if (g_ctx.palette.size() != 0) {
     handle(KEY_DOWN, K_Q, [] { palette(-1); });
     handle(KEY_DOWN, K_W, [] { palette(1); });
-    g_brush = g_ctx.palette[0];
     g_pal = 0;
-  } else {
-    g_brush = {255, 255, 255};
   }
 
   handle(KEY_DOWN, K_Y, yank);
