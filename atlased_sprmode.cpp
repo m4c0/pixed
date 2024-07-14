@@ -3,6 +3,7 @@ module atlased;
 static dotz::ivec2 g_cursor{};
 static dotz::ivec2 g_sprite{};
 static unsigned g_pal{};
+static pixed::pixel g_brush{};
 
 static unsigned data(quack::instance *i) {
   auto [sw, sh] = g_ctx.spr_size;
@@ -13,11 +14,7 @@ static unsigned data(quack::instance *i) {
       .grid_size = sz,
   });
 
-  dotz::vec4 colour{255, 255, 255, 255};
-  if (g_ctx.palette.size() > 0) {
-    auto pal = g_ctx.palette[g_pal];
-    colour = {pal.r, pal.g, pal.b, 255};
-  }
+  dotz::vec4 colour{g_brush.r, g_brush.g, g_brush.b, 255};
   colour = colour / 256.0;
 
   *i++ = {
@@ -48,14 +45,22 @@ static void cursor(dotz::ivec2 d) {
 
 static void palette(int d) {
   g_pal = (g_pal + d) % g_ctx.palette.size();
+  g_brush = g_ctx.palette[g_pal];
   quack::donald::data(::data);
 }
 
 static void tap() {
   auto c = g_sprite + g_cursor;
   auto p = c.y * g_ctx.w + c.x;
-  g_ctx.image[p] = g_ctx.palette[g_pal];
+  g_ctx.image[p] = g_brush;
   atlased::load_atlas();
+}
+
+static void yank() {
+  auto c = g_sprite + g_cursor;
+  auto p = c.y * g_ctx.w + c.x;
+  g_brush = g_ctx.image[p];
+  quack::donald::data(::data);
 }
 
 void atlased::modes::sprite(dotz::ivec2 sel) {
@@ -69,8 +74,14 @@ void atlased::modes::sprite(dotz::ivec2 sel) {
   if (g_ctx.palette.size() != 0) {
     handle(KEY_DOWN, K_Q, [] { palette(-1); });
     handle(KEY_DOWN, K_W, [] { palette(1); });
-    handle(KEY_DOWN, K_SPACE, tap);
+    g_brush = g_ctx.palette[0];
+    g_pal = 0;
+  } else {
+    g_brush = {255, 255, 255};
   }
+
+  handle(KEY_DOWN, K_Y, yank);
+  handle(KEY_DOWN, K_SPACE, tap);
 
   handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
   handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
