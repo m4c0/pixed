@@ -7,6 +7,15 @@ static unsigned g_pal{};
 static pixed::pixel g_brush{};
 static bool g_area{};
 
+static auto area() {
+  auto s = dotz::min(g_cursor, g_cursor_e);
+  auto e = dotz::max(g_cursor, g_cursor_e);
+  struct pair {
+    dotz::ivec2 s, e;
+  };
+  return pair{s, e};
+}
+
 static unsigned data(quack::instance *i) {
   auto [sw, sh] = g_ctx.spr_size;
   dotz::vec2 sz = g_ctx.spr_size;
@@ -34,8 +43,7 @@ static unsigned data(quack::instance *i) {
     };
   }
 
-  auto s = dotz::min(g_cursor, g_cursor_e);
-  auto e = dotz::max(g_cursor, g_cursor_e);
+  auto [s, e] = area();
   *i++ = {
       .position = s,
       .size = e - s + 1,
@@ -71,10 +79,15 @@ static void palette(int d) {
 }
 
 static void tap() {
-  auto c = g_sprite + g_cursor;
-  auto p = c.y * g_ctx.w + c.x;
-  g_ctx.image[p] = g_brush;
-  atlased::load_atlas();
+  auto [s, e] = area();
+  for (auto y = s.y; y <= e.y; y++) {
+    for (auto x = s.x; x <= e.x; x++) {
+      auto c = g_sprite + dotz::ivec2{x, y};
+      auto p = c.y * g_ctx.w + c.x;
+      g_ctx.image[p] = g_brush;
+      atlased::load_atlas();
+    }
+  }
 }
 
 static void yank() {
