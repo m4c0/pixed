@@ -25,6 +25,11 @@ static void type(unsigned n) {
   quack::donald::data(g_fn);
 };
 
+static void reset() {
+  *g_target = g_original;
+  atlased::modes::sprite();
+}
+
 void atlased::modes::colour(pixed::pixel *p,
                             unsigned (*fn)(quack::instance *)) {
   using namespace casein;
@@ -54,5 +59,5 @@ void atlased::modes::colour(pixed::pixel *p,
   handle(KEY_DOWN, K_E, [] { type(0xE); });
   handle(KEY_DOWN, K_F, [] { type(0xF); });
 
-  handle(KEY_DOWN, K_ESCAPE, modes::sprite);
+  handle(KEY_DOWN, K_ESCAPE, reset);
 }
