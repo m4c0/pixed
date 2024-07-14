@@ -16,10 +16,20 @@ static unsigned data(quack::instance *i) {
 
   dotz::vec4 colour{g_brush.r, g_brush.g, g_brush.b, 255};
   *i++ = {
-      .position = {-1, 0},
+      .position = {-3, 0},
       .size = {1, 1},
       .colour = colour / 256.0,
   };
+
+  for (auto idx = 0; idx < g_ctx.palette.size(); idx++) {
+    auto pal = g_ctx.palette[idx];
+    dotz::vec4 colour{pal.r, pal.g, pal.b, 255};
+    *i++ = {
+        .position = {-2, idx},
+        .size = {1, 1},
+        .colour = colour / 256.0,
+    };
+  }
 
   *i++ = {
       .position = g_cursor,
