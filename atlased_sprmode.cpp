@@ -1,9 +1,11 @@
 module atlased;
 
 static dotz::ivec2 g_cursor{};
+static dotz::ivec2 g_cursor_e{};
 static dotz::ivec2 g_sprite{};
 static unsigned g_pal{};
 static pixed::pixel g_brush{};
+static bool g_area{};
 
 static unsigned data(quack::instance *i) {
   auto [sw, sh] = g_ctx.spr_size;
@@ -13,6 +15,7 @@ static unsigned data(quack::instance *i) {
       .grid_pos = sz / 2.0f,
       .grid_size = sz,
   });
+  auto pp = i;
 
   dotz::vec4 colour{g_brush.r, g_brush.g, g_brush.b, 255};
   *i++ = {
@@ -31,9 +34,11 @@ static unsigned data(quack::instance *i) {
     };
   }
 
+  auto s = dotz::min(g_cursor, g_cursor_e);
+  auto e = dotz::max(g_cursor, g_cursor_e);
   *i++ = {
-      .position = g_cursor,
-      .size = {1, 1},
+      .position = s,
+      .size = e - s + 1,
       .colour = {1, 1, 1, 1},
   };
 
@@ -49,11 +54,13 @@ static unsigned data(quack::instance *i) {
       };
     }
   }
-  return sw * sh + 1;
+  return i - pp;
 }
 
 static void cursor(dotz::ivec2 d) {
   g_cursor = (g_cursor + d + g_ctx.spr_size) % g_ctx.spr_size;
+  if (!g_area)
+    g_cursor_e = g_cursor;
   quack::donald::data(::data);
 }
 
@@ -80,6 +87,7 @@ static void yank() {
 void atlased::modes::sprite(dotz::ivec2 sel) {
   using namespace casein;
 
+  g_area = false;
   g_sprite = sel * g_ctx.spr_size;
 
   handle(FILES_DROP, nullptr);
@@ -96,6 +104,9 @@ void atlased::modes::sprite(dotz::ivec2 sel) {
 
   handle(KEY_DOWN, K_Y, yank);
   handle(KEY_DOWN, K_SPACE, tap);
+
+  handle(KEY_DOWN, K_V, [] { g_area = true; });
+  handle(KEY_UP, K_V, [] { g_area = false; });
 
   handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
   handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
