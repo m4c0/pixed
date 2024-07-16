@@ -22,6 +22,7 @@ struct ihdr {
   uint8_t filter = 0;
   uint8_t interlace = 0;
 
+  ihdr() = default;
   ihdr(uint32_t w, uint32_t h)
       : width{yoyo::flip32(w)}
       , height{yoyo::flip32(h)} {}
