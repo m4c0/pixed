@@ -41,6 +41,7 @@ static unsigned data(quack::instance *i) {
     draw_brush(g_ctx.palette[idx], {-2, idx}, i);
   }
 
+  // Drawing area contour {{{
   *i++ = {
       .position = dotz::vec2{-0.1f},
       .size = sz + 0.2f,
@@ -51,6 +52,22 @@ static unsigned data(quack::instance *i) {
       .size = sz,
       .colour = {0, 0, 0, 1},
   };
+  // }}}
+
+  // Miniature in a grid {{{
+  dotz::vec2 spr = g_sprite;
+  for (dotz::vec2 p{}; p.y < 3; p.y++) {
+    for (p.x = 0; p.x < 3; p.x++) {
+      *i++ = {
+          .position = p + dotz::vec2{sz.x + 1.0f, 0.0f},
+          .size{1},
+          .uv0 = spr / atlased::image_size(),
+          .uv1 = (spr + sz) / atlased::image_size(),
+          .multiplier{1, 1, 1, 1},
+      };
+    }
+  }
+  // }}}
 
   auto [s, e] = area();
   *i++ = {
