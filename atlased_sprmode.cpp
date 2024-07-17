@@ -41,6 +41,17 @@ static unsigned data(quack::instance *i) {
     draw_brush(g_ctx.palette[idx], {-2, idx}, i);
   }
 
+  *i++ = {
+      .position = dotz::vec2{-0.1f},
+      .size = sz + 0.2f,
+      .colour = {1, 1, 1, 1},
+  };
+  *i++ = {
+      .position = dotz::vec2{},
+      .size = sz,
+      .colour = {0, 0, 0, 1},
+  };
+
   auto [s, e] = area();
   *i++ = {
       .position = s,
