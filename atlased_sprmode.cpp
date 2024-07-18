@@ -111,9 +111,9 @@ static void tap() {
       auto c = g_sprite + dotz::ivec2{x, y};
       auto p = c.y * g_ctx.w + c.x;
       g_ctx.image[p] = g_brush;
-      atlased::load_atlas();
     }
   }
+  atlased::load_atlas();
 }
 
 static void yank() {
