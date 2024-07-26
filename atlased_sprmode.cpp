@@ -16,6 +16,11 @@ static auto area() {
   return pair{s, e};
 }
 
+static auto idx(unsigned x, unsigned y) {
+  auto c = g_sprite + dotz::ivec2{x, y};
+  return c.y * g_ctx.w + c.x;
+}
+
 static void draw_brush(pixed::pixel bruh, dotz::vec2 pos, quack::instance *&i) {
   dotz::vec4 colour{bruh.r, bruh.g, bruh.b, bruh.a};
   *i++ = {
@@ -108,9 +113,7 @@ static void tap() {
   auto [s, e] = area();
   for (auto y = s.y; y <= e.y; y++) {
     for (auto x = s.x; x <= e.x; x++) {
-      auto c = g_sprite + dotz::ivec2{x, y};
-      auto p = c.y * g_ctx.w + c.x;
-      g_ctx.image[p] = g_brush;
+      g_ctx.image[idx(x, y)] = g_brush;
     }
   }
   atlased::load_atlas();
@@ -133,11 +136,63 @@ static void append_pal() {
   change_pal();
 }
 
+static void move_sprite_l() {
+  for (auto y = 0; y < g_ctx.spr_size.y; y++) {
+    for (auto x = 0; x < g_ctx.spr_size.x - 1; x++) {
+      auto p = idx(x, y);
+      g_ctx.image[p] = g_ctx.image[p + 1];
+    }
+  }
+  atlased::load_atlas();
+}
+static void move_sprite_r() {
+  for (auto y = 0; y < g_ctx.spr_size.y; y++) {
+    for (auto x = g_ctx.spr_size.x - 1; x > 0; x--) {
+      auto p = idx(x, y);
+      g_ctx.image[p] = g_ctx.image[p - 1];
+    }
+  }
+  atlased::load_atlas();
+}
+static void move_sprite_u() {
+  for (auto y = 0; y < g_ctx.spr_size.y - 1; y++) {
+    for (auto x = 0; x < g_ctx.spr_size.x; x++) {
+      auto p = idx(x, y);
+      g_ctx.image[p] = g_ctx.image[p + g_ctx.w];
+    }
+  }
+  atlased::load_atlas();
+}
+static void move_sprite_d() {
+  for (auto y = g_ctx.spr_size.y - 1; y > 0; y--) {
+    for (auto x = 0; x < g_ctx.spr_size.x; x++) {
+      auto p = idx(x, y);
+      g_ctx.image[p] = g_ctx.image[p - g_ctx.w];
+    }
+  }
+  atlased::load_atlas();
+}
+
 void atlased::modes::sprite(dotz::ivec2 sel) {
   g_area = false;
   g_sprite = sel * g_ctx.spr_size;
 
   sprite();
+}
+
+static void move_cursor() {
+  using namespace casein;
+  handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
+  handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
+  handle(KEY_DOWN, K_UP, [] { cursor({0, -1}); });
+  handle(KEY_DOWN, K_DOWN, [] { cursor({0, 1}); });
+}
+static void move_sprite() {
+  using namespace casein;
+  handle(KEY_DOWN, K_LEFT, move_sprite_l);
+  handle(KEY_DOWN, K_RIGHT, move_sprite_r);
+  handle(KEY_DOWN, K_UP, move_sprite_u);
+  handle(KEY_DOWN, K_DOWN, move_sprite_d);
 }
 
 void atlased::modes::sprite() {
@@ -161,10 +216,10 @@ void atlased::modes::sprite() {
   handle(KEY_DOWN, K_V, [] { g_area = true; });
   handle(KEY_UP, K_V, [] { g_area = false; });
 
-  handle(KEY_DOWN, K_LEFT, [] { cursor({-1, 0}); });
-  handle(KEY_DOWN, K_RIGHT, [] { cursor({1, 0}); });
-  handle(KEY_DOWN, K_UP, [] { cursor({0, -1}); });
-  handle(KEY_DOWN, K_DOWN, [] { cursor({0, 1}); });
+  handle(KEY_DOWN, K_M, move_sprite);
+  handle(KEY_UP, K_M, move_cursor);
+
+  move_cursor();
   handle(KEY_DOWN, K_ESCAPE, modes::atlas);
 
   quack::donald::data(::data);
