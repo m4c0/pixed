@@ -127,7 +127,11 @@ static void yank() {
 }
 
 static void delete_pal() {
-  g_ctx.palette[g_pal] = {};
+  for (auto i = g_pal; i < g_ctx.palette.size() - 1; i++) {
+    g_ctx.palette[i] = g_ctx.palette[i + 1];
+  }
+  g_ctx.palette.pop_back();
+  if (g_pal == g_ctx.palette.size()) g_pal--;
   quack::donald::data(::data);
 }
 static void change_pal() {
