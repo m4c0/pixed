@@ -22,7 +22,7 @@ export struct context {
   unsigned w;
   unsigned h;
   dotz::ivec2 spr_size{};
-  hai::array<pixel> palette{};
+  hai::varray<pixel> palette{};
   hai::array<pixel> image{};
 };
 

@@ -149,16 +149,17 @@ static constexpr auto read_splt(context &img) {
       if (buf[6] != 8) // sample depth
         return;
 
-      auto pal_size = buf.size() - 7;
+      unsigned pal_size = buf.size() - 7;
       if (pal_size % 6 != 0)
         return;
 
-      hai::array<pixed::pixel> res{pal_size / 6};
+      img.palette = hai::varray<pixed::pixel>{pal_size/6U};
+      img.palette.expand(img.palette.capacity());
       auto pb = buf.begin() + 7;
-      for (auto i = 0; i < res.size(); i++, pb += 6) {
-        res[i] = *reinterpret_cast<pixed::pixel *>(pb);
+      for (auto &p : img.palette) {
+        p = *reinterpret_cast<pixed::pixel *>(pb);
+        pb += 6;
       }
-      img.palette = traits::move(res);
     });
   };
 }
