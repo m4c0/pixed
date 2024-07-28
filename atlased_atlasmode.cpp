@@ -7,7 +7,8 @@ static dotz::ivec2 g_cursor{};
 static dotz::ivec2 g_yank{};
 static bool g_saving{};
 
-static unsigned data(quack::instance *i) {
+static unsigned data(quack::instance *start) {
+  auto i = start;
   auto [sw, sh] = atlased::grid_size();
   dotz::vec2 sz = atlased::grid_size();
 
@@ -41,7 +42,7 @@ static unsigned data(quack::instance *i) {
       };
     }
   }
-  return sw * sh + 1;
+  return i - start;
 }
 
 static void cursor(dotz::ivec2 d) {
