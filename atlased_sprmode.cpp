@@ -176,9 +176,9 @@ static void change_pal() {
   quack::donald::data(::data);
 }
 static void append_pal() {
-  g_ctx.palette.add_capacity(1);
+  g_ctx.palette.push_back_doubling(g_brush);
   g_pal = g_ctx.palette.size() - 1;
-  change_pal();
+  quack::donald::data(::data);
 }
 
 static void move_sprite_l() {
