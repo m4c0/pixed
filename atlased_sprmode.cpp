@@ -83,6 +83,21 @@ static unsigned data(quack::instance *i) {
       };
     }
   }
+
+  *i++ = {
+      .position = dotz::vec2{sz.x + 1.0f, 3.0f},
+      .size{3},
+      .uv0 = atlased::mark() / sz,
+      .uv1 = (atlased::mark() + 1) / sz,
+      .multiplier = {1, 1, 1, 1},
+  };
+  *i++ = {
+      .position = dotz::vec2{sz.x + 1.0f, 3.0f},
+      .size{3},
+      .uv0 = spr / atlased::image_size(),
+      .uv1 = (spr + sz) / atlased::image_size(),
+      .multiplier{1, 1, 1, 1},
+  };
   // }}}
 
   auto [s, e] = area();
