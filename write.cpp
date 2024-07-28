@@ -95,7 +95,7 @@ static constexpr auto write_idat(const void *img, unsigned w, unsigned h) {
   return [=](auto &wr) { return write_idat(wr, img, w, h); };
 }
 
-static constexpr auto write_splt(const hai::array<pixed::pixel> &pal) {
+static constexpr auto write_splt(const hai::varray<pixed::pixel> &pal) {
   return [&](auto &wr) {
     if (pal.size() == 0)
       return mno::req<void>{};
