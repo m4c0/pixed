@@ -1,4 +1,7 @@
 module atlased;
+import traits;
+
+using namespace traits::ints;
 
 static dotz::ivec2 g_cursor{};
 static dotz::ivec2 g_cursor_e{};
@@ -121,9 +124,19 @@ static void tap() {
 }
 
 static void yank() {
-  auto c = g_sprite + g_cursor;
-  auto p = c.y * g_ctx.w + c.x;
-  g_brush = g_ctx.image[p];
+  auto [s, e] = area();
+  dotz::ivec4 c{};
+  unsigned count{};
+  for (auto y = s.y; y <= e.y; y++) {
+    for (auto x = s.x; x <= e.x; x++, count++) {
+      const auto &p = g_ctx.image[idx(x, y)];
+      c = c + dotz::ivec4{p.r, p.g, p.b, p.a};
+    }
+  }
+  c = c / count;
+  g_brush = pixed::pixel{static_cast<uint8_t>(c.x), static_cast<uint8_t>(c.y),
+                         static_cast<uint8_t>(c.z), static_cast<uint8_t>(c.w)};
+
   quack::donald::data(::data);
 }
 
@@ -132,7 +145,8 @@ static void delete_pal() {
     g_ctx.palette[i] = g_ctx.palette[i + 1];
   }
   g_ctx.palette.pop_back();
-  if (g_pal == g_ctx.palette.size()) g_pal--;
+  if (g_pal == g_ctx.palette.size())
+    g_pal--;
   quack::donald::data(::data);
 }
 static void change_pal() {
