@@ -23,10 +23,11 @@ static auto idx(unsigned x, unsigned y) {
 
 static void draw_brush(pixed::pixel bruh, dotz::vec2 pos, quack::instance *&i) {
   dotz::vec4 colour{bruh.r, bruh.g, bruh.b, bruh.a};
+  colour = colour / 256.0;
   *i++ = {
       .position = pos,
       .size = {1, 1},
-      .colour = colour / 256.0,
+      .colour = dotz::pow(colour, 2.2f),
   };
 }
 
