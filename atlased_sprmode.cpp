@@ -126,6 +126,10 @@ static void yank() {
   quack::donald::data(::data);
 }
 
+static void delete_pal() {
+  g_ctx.palette[g_pal] = {};
+  quack::donald::data(::data);
+}
 static void change_pal() {
   g_ctx.palette[g_pal] = g_brush;
   quack::donald::data(::data);
@@ -207,6 +211,7 @@ void atlased::modes::sprite() {
   }
   handle(KEY_DOWN, K_A, append_pal);
   handle(KEY_DOWN, K_C, change_pal);
+  handle(KEY_DOWN, K_D, delete_pal);
 
   handle(KEY_DOWN, K_Y, yank);
   handle(KEY_DOWN, K_SPACE, tap);
