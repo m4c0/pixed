@@ -2,6 +2,7 @@ module atlased;
 import silog;
 import traits;
 
+static dotz::ivec2 g_mark{};
 static dotz::ivec2 g_cursor{};
 static dotz::ivec2 g_yank{};
 static bool g_saving{};
@@ -24,6 +25,13 @@ static unsigned data(quack::instance *i) {
 
   for (dotz::vec2 p{}; p.y < sh; p.y++) {
     for (p.x = 0; p.x < sw; p.x++) {
+      *i++ = {
+          .position = p + 0.05f,
+          .size = dotz::vec2(0.9f),
+          .uv0 = g_mark / sz,
+          .uv1 = (g_mark + 1) / sz,
+          .multiplier = {1, 1, 1, 1},
+      };
       *i++ = {
           .position = p + 0.05f,
           .size = dotz::vec2(0.9f),
@@ -106,6 +114,11 @@ void atlased::modes::atlas() {
 
   handle(KEY_DOWN, K_E, read);
   handle(KEY_DOWN, K_W, write);
+
+  handle(KEY_DOWN, K_M, [] {
+    g_mark = g_cursor;
+    quack::donald::data(::data);
+  });
 
   handle(KEY_DOWN, K_Y, [] { g_yank = g_cursor; });
   handle(KEY_DOWN, K_P, put);
