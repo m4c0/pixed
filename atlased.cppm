@@ -59,6 +59,7 @@ inline dotz::ivec2 image_size() { return dotz::ivec2{g_ctx.w, g_ctx.h}; }
 inline dotz::ivec2 grid_size() { return image_size() / g_ctx.spr_size; }
 
 void load_atlas() { quack::donald::atlas(::atlas); }
+dotz::ivec2 mark();
 } // namespace atlased
 
 struct init {

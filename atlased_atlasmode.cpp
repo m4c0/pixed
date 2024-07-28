@@ -7,6 +7,8 @@ static dotz::ivec2 g_cursor{};
 static dotz::ivec2 g_yank{};
 static bool g_saving{};
 
+dotz::ivec2 atlased::mark() { return g_mark; }
+
 static unsigned data(quack::instance *start) {
   auto i = start;
   auto [sw, sh] = atlased::grid_size();

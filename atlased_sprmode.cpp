@@ -70,6 +70,13 @@ static unsigned data(quack::instance *i) {
       *i++ = {
           .position = p + dotz::vec2{sz.x + 1.0f, 0.0f},
           .size{1},
+          .uv0 = atlased::mark() / sz,
+          .uv1 = (atlased::mark() + 1) / sz,
+          .multiplier = {1, 1, 1, 1},
+      };
+      *i++ = {
+          .position = p + dotz::vec2{sz.x + 1.0f, 0.0f},
+          .size{1},
           .uv0 = spr / atlased::image_size(),
           .uv1 = (spr + sz) / atlased::image_size(),
           .multiplier{1, 1, 1, 1},
