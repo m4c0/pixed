@@ -7,7 +7,25 @@ import yoyo;
 
 using namespace traits::ints;
 
+static mno::req<void> scale(const pixed::context &ctx, unsigned sz,
+                            hai::varray<uint8_t> *buf) {
+  auto icon = pixed::create(sz, sz);
+  buf->set_capacity(102400);
+
+  auto *p = icon.image.begin();
+  for (auto y = 0; y < sz; y++) {
+    for (auto x = 0; x < sz; x++, p++) {
+      *p = {255, 255, 255, 255};
+    }
+  }
+
+  return pixed::write(*buf, icon);
+}
+
 static mno::req<void> convert_to_ico(const pixed::context &ctx) {
+  if (ctx.w != 1024 || ctx.h != 1024)
+    return mno::req<void>::failed("expecting 1024x1024 source icon");
+
   constexpr const auto num_imgs = 3;
 
   auto res = yoyo::file_writer::open("icon.ico")
@@ -23,13 +41,9 @@ static mno::req<void> convert_to_ico(const pixed::context &ctx) {
   constexpr const unsigned sizes[num_imgs]{64, 32, 16};
   hai::varray<uint8_t> bufs[num_imgs]{};
   unsigned ofs = hdr_sz + img_hdr_sz * num_imgs;
-  ;
   auto *buf = bufs;
   for (auto s : sizes) {
-    auto icon = pixed::create(s, s);
-    buf->set_capacity(102400);
-
-    auto r = pixed::write(*buf, icon);
+    auto r = scale(ctx, s, buf);
     if (!r.is_valid())
       return r.trace("writing downscaled image");
 
