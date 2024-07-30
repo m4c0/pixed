@@ -29,6 +29,7 @@ export constexpr pixed::pixel from_ivec4(dotz::ivec4 p) {
 export struct context {
   unsigned w;
   unsigned h;
+  unsigned ct;
   dotz::ivec2 spr_size{};
   hai::varray<pixel> palette{};
   hai::array<pixel> image{};

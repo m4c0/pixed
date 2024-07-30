@@ -7,7 +7,8 @@ import silog;
 
 using namespace pixed;
 
-static mno::req<void> read_ihdr(yoyo::reader &r, unsigned &w, unsigned &h) {
+static mno::req<void> read_ihdr(yoyo::reader &r, unsigned &w, unsigned &h,
+                                unsigned &ct) {
   return r.read_u32_be()
       .map([&](auto n) { w = n; })
       .fmap([&] { return r.read_u32_be(); })
@@ -16,9 +17,11 @@ static mno::req<void> read_ihdr(yoyo::reader &r, unsigned &w, unsigned &h) {
       .assert([](auto bit_depth) { return bit_depth == 8; },
               "unsupported bitdepth")
       .fmap([&](auto) { return r.read_u8(); })
-      .assert([](auto colour_type) { return colour_type == 6; },
-              "unsupported colour type")
-      .fmap([&](auto) { return r.read_u8(); })
+      .assert(
+          [](auto colour_type) { return colour_type == 6 || colour_type == 2; },
+          "unsupported colour type")
+      .map([&](auto n) { ct = (n == 6) ? 4 : 3; })
+      .fmap([&] { return r.read_u8(); })
       .assert([](auto compression) { return compression == 0; },
               "unsupported compression")
       .fmap([&](auto) { return r.read_u8(); })
@@ -28,11 +31,11 @@ static mno::req<void> read_ihdr(yoyo::reader &r, unsigned &w, unsigned &h) {
               "unsupported interlace")
       .map([&](auto) { silog::log(silog::debug, "found %dx%d image", w, h); });
 }
-static constexpr auto read_ihdr(unsigned &w, unsigned &h) {
-  return [&](yoyo::subreader r) { return read_ihdr(r, w, h); };
+static constexpr auto read_ihdr(unsigned &w, unsigned &h, unsigned &ct) {
+  return [&](yoyo::subreader r) { return read_ihdr(r, w, h, ct); };
 }
 static mno::req<void> read_ihdr(yoyo::reader &r, context &ctx) {
-  return frk::take("IHDR", ::read_ihdr(ctx.w, ctx.h))(r);
+  return frk::take("IHDR", ::read_ihdr(ctx.w, ctx.h, ctx.ct))(r);
 }
 static constexpr auto read_ihdr(context &img) {
   return [&](auto &r) { return read_ihdr(r, img); };
