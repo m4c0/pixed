@@ -117,6 +117,16 @@ static constexpr auto write_splt(const hai::varray<pixed::pixel> &pal) {
   };
 }
 
+mno::req<void> pixed::write(hai::array<uint8_t> &buf, context &img) {
+  return mno::req{yoyo::memwriter{buf}}
+      .fpeek(frk::signature("PNG"))
+      .fpeek(write_ihdr(img.w, img.h))
+      .fpeek(write_splt(img.palette))
+      .fpeek(frk::chunk("spSZ", img.spr_size))
+      .fpeek(write_idat(img.image.begin(), img.w, img.h))
+      .fpeek(frk::chunk("IEND"))
+      .map(frk::end());
+}
 mno::req<void> pixed::write(const char *file, context &img) {
   sitime::stopwatch w{};
   return yoyo::file_writer::open(file)
