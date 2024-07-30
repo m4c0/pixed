@@ -38,12 +38,12 @@ static constexpr auto read_ihdr(context &img) {
   return [&](auto &r) { return read_ihdr(r, img); };
 }
 
-static constexpr auto paeth_pred(uint8_t a, uint8_t b, uint8_t c) {
+static constexpr int paeth_pred(int a, int b, int c) {
   // a = left, b = above, c = upper-left
-  auto p = a + b - c;
-  auto pa = dotz::abs(p - a);
-  auto pb = dotz::abs(p - b);
-  auto pc = dotz::abs(p - c);
+  int p = a + b - c;
+  int pa = dotz::abs(p - a);
+  int pb = dotz::abs(p - b);
+  int pc = dotz::abs(p - c);
   if (pa <= pb && pa <= pc)
     return a;
   if (pb <= pc)
@@ -84,14 +84,11 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
     if (y == 0)
       return mno::req<void>{};
 
-    for (auto x = 0; x < 4; x++) {
-      data[x] = data[x - w * 4];
-    }
-    for (auto x = 4; x < w * 4; x++) {
-      auto a = data[x - 4];
-      auto b = data[x - w * 4];
-      auto c = data[x - w * 4 - 4];
-      data[x] += paeth_pred(a, b, c);
+    for (auto x = 0; x < w * 4; x++) {
+      int a = x >= 4 ? data[x - 4] : 0;
+      int b = y >= 1 ? data[x - w * 4] : 0;
+      int c = x >= 4 && y >= 1 ? data[x - w * 4 - 4] : 0;
+      data[x] = (data[x] + paeth_pred(a, b, c)) % 256;
     }
     return mno::req<void>{};
   default:
