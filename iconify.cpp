@@ -49,7 +49,7 @@ static mno::req<void> convert_to_ico(const pixed::context &ctx) {
   constexpr const auto hdr_sz = 6;
   constexpr const auto img_hdr_sz = 16;
 
-  constexpr const unsigned sizes[num_imgs]{64, 32, 16};
+  constexpr const unsigned sizes[num_imgs]{128, 64, 32};
   hai::varray<uint8_t> bufs[num_imgs]{};
   unsigned ofs = hdr_sz + img_hdr_sz * num_imgs;
   auto *buf = bufs;
