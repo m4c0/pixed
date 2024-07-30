@@ -117,7 +117,7 @@ static constexpr auto write_splt(const hai::varray<pixed::pixel> &pal) {
   };
 }
 
-mno::req<unsigned> pixed::write(hai::array<uint8_t> &buf, context &img) {
+mno::req<void> pixed::write(hai::varray<uint8_t> &buf, context &img) {
   return mno::req{yoyo::memwriter{buf}}
       .fpeek(frk::signature("PNG"))
       .fpeek(write_ihdr(img.w, img.h))
@@ -125,7 +125,7 @@ mno::req<unsigned> pixed::write(hai::array<uint8_t> &buf, context &img) {
       .fpeek(frk::chunk("spSZ", img.spr_size))
       .fpeek(write_idat(img.image.begin(), img.w, img.h))
       .fpeek(frk::chunk("IEND"))
-      .map([](auto &w) { return w.raw_pos(); });
+      .map([&](auto &w) { buf.expand(w.raw_pos()); });
 }
 mno::req<void> pixed::write(const char *file, context &img) {
   sitime::stopwatch w{};

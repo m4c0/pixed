@@ -30,8 +30,8 @@ export [[nodiscard]] context create(unsigned w, unsigned h) {
   return {.w = w, .h = h, .image{w * h}};
 }
 
-export [[nodiscard]] mno::req<unsigned> write(hai::array<uint8_t> &buf,
-                                              context &img);
+export [[nodiscard]] mno::req<void> write(hai::varray<uint8_t> &buf,
+                                          context &img);
 export [[nodiscard]] mno::req<void> write(const char *file, context &img);
 export [[nodiscard]] mno::req<context> read(const char *file);
 
