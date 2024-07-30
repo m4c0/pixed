@@ -70,11 +70,15 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
     }
     return mno::req<void>{};
   case 3:
-    if (y == 0)
+    if (y == 0) {
+      for (auto x = 4; x < w * 4; x++) {
+        data[x] += data[x - 4] / 2;
+      }
       return mno::req<void>{};
+    }
 
     for (auto x = 0; x < 4; x++) {
-      data[x] = data[x - w * 4];
+      data[x] += data[x - w * 4] / 2;
     }
     for (auto x = 4; x < w * 4; x++) {
       data[x] += (data[x - 4] + data[x - w * 4]) / 2;
@@ -88,7 +92,7 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
       int a = x >= 4 ? data[x - 4] : 0;
       int b = y >= 1 ? data[x - w * 4] : 0;
       int c = x >= 4 && y >= 1 ? data[x - w * 4 - 4] : 0;
-      data[x] = (data[x] + paeth_pred(a, b, c)) % 256;
+      data[x] += paeth_pred(a, b, c);
     }
     return mno::req<void>{};
   default:
@@ -150,7 +154,7 @@ static constexpr auto read_splt(context &img) {
       if (pal_size % 6 != 0)
         return;
 
-      img.palette = hai::varray<pixed::pixel>{pal_size/6U};
+      img.palette = hai::varray<pixed::pixel>{pal_size / 6U};
       img.palette.expand(img.palette.capacity());
       auto pb = buf.begin() + 7;
       for (auto &p : img.palette) {
