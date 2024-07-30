@@ -18,6 +18,14 @@ export struct pixel {
 };
 static_assert(sizeof(pixel) == 4);
 
+export constexpr dotz::ivec4 to_ivec4(pixed::pixel p) {
+  return {p.r, p.g, p.b, p.a};
+}
+export constexpr pixed::pixel from_ivec4(dotz::ivec4 p) {
+  return {static_cast<uint8_t>(p.x), static_cast<uint8_t>(p.y),
+          static_cast<uint8_t>(p.z), static_cast<uint8_t>(p.w)};
+}
+
 export struct context {
   unsigned w;
   unsigned h;

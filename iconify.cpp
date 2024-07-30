@@ -1,5 +1,6 @@
 #pragma leco tool
 
+import dotz;
 import hai;
 import pixed;
 import traits;
@@ -12,10 +13,20 @@ static mno::req<void> scale(const pixed::context &ctx, unsigned sz,
   auto icon = pixed::create(sz, sz);
   buf->set_capacity(102400);
 
+  auto rt = ctx.w / sz;
+
   auto *p = icon.image.begin();
   for (auto y = 0; y < sz; y++) {
     for (auto x = 0; x < sz; x++, p++) {
-      *p = {255, 255, 255, 255};
+      dotz::ivec4 acc{};
+      for (auto yy = 0; yy < rt; yy++) {
+        auto sy = y * rt + yy;
+        for (auto xx = 0; xx < rt; xx++) {
+          auto sx = x * rt + xx;
+          acc = acc + pixed::to_ivec4(ctx.image[sy * ctx.w + sx]);
+        }
+      }
+      *p = pixed::from_ivec4(acc / (rt * rt));
     }
   }
 
@@ -74,8 +85,7 @@ static mno::req<void> convert_to_ico(const pixed::context &ctx) {
 }
 
 int main(int argc, char **argv) try {
-  convert_to_ico(pixed::create(1024, 1024)).log_error();
-  // pixed::read("icon.png").fmap(convert_to_ico).log_error();
+  pixed::read("icon.png").fmap(convert_to_ico).log_error();
 
   return 0;
 } catch (...) {
