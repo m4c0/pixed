@@ -103,6 +103,19 @@ static constexpr auto run_filter(void *d, int filter, unsigned y, int w) {
   }
 }
 
+static constexpr auto deflate_4ct_scanline(context &img, yoyo::reader &hr) {
+  mno::req<void> res{};
+  for (auto y = 0; y < img.h && res.is_valid(); y++) {
+    res = hr.read_u8().fmap([&](auto filter) {
+      void *ptr = img.image.begin() + y * img.w;
+      return hr.read(ptr, img.w * 4)
+          .fmap([&] { return run_filter(ptr, filter, y, img.w); })
+          .trace("reading scanline");
+    });
+  }
+  return res;
+}
+
 static constexpr auto deflate(context &img, hai::varray<uint8_t> &zlib) {
   return [&] {
     img.image = hai::array<pixed::pixel>{img.h * img.w};
@@ -114,16 +127,9 @@ static constexpr auto deflate(context &img, hai::varray<uint8_t> &zlib) {
                 "only deflate is supported")
         .fmap([&](auto) { return flate::huffman_reader::create(&b); })
         .fmap([&](auto &hr) {
-          mno::req<void> res{};
-          for (auto y = 0; y < img.h && res.is_valid(); y++) {
-            res = hr.read_u8().fmap([&](auto filter) {
-              void *ptr = img.image.begin() + y * img.w;
-              return hr.read(ptr, img.w * 4)
-                  .fmap([&] { return run_filter(ptr, filter, y, img.w); })
-                  .trace("reading scanline");
-            });
-          }
-          return res;
+          if (img.ct == 4)
+            return deflate_4ct_scanline(img, hr);
+          return mno::req<void>::failed("3ct TBD");
         });
   };
 }
