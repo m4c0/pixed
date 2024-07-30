@@ -110,10 +110,28 @@ static constexpr auto deflate_4ct_scanline(context &img, yoyo::reader &hr) {
       void *ptr = img.image.begin() + y * img.w;
       return hr.read(ptr, img.w * 4)
           .fmap([&] { return run_filter(ptr, filter, y, img.w); })
-          .trace("reading scanline");
+          .trace("reading RGBA scanline");
     });
   }
   return res;
+}
+
+static constexpr auto deflate_3ct_scanline(context &img, yoyo::reader &hr) {
+  mno::req<void> res{};
+  for (auto y = 0; y < img.h && res.is_valid(); y++) {
+    unsigned filter{};
+    res = hr.read_u8().map([&](auto f) { filter = f; });
+    for (auto x = 0; x < img.w && res.is_valid(); x++) {
+      void *ptr = img.image.begin() + y * img.w + x;
+      res = hr.read(ptr, 3);
+    }
+    void *ptr = img.image.begin() + y * img.w;
+    res = run_filter(ptr, filter, y, img.w);
+    for (auto x = 0; x < img.w; x++) {
+      img.image[y * img.w + x].a = 255;
+    }
+  }
+  return res.trace("reading RGB scanlines");
 }
 
 static constexpr auto deflate(context &img, hai::varray<uint8_t> &zlib) {
@@ -129,7 +147,7 @@ static constexpr auto deflate(context &img, hai::varray<uint8_t> &zlib) {
         .fmap([&](auto &hr) {
           if (img.ct == 4)
             return deflate_4ct_scanline(img, hr);
-          return mno::req<void>::failed("3ct TBD");
+          return deflate_3ct_scanline(img, hr);
         });
   };
 }
