@@ -3,6 +3,7 @@
 import dotz;
 import hai;
 import pixed;
+import silog;
 import traits;
 import yoyo;
 
@@ -10,6 +11,8 @@ using namespace traits::ints;
 
 static mno::req<void> scale(const pixed::context &ctx, unsigned sz,
                             hai::varray<uint8_t> *buf) {
+  silog::log(silog::info, "scaling image to %dx%d", sz, sz);
+
   auto icon = pixed::create(sz, sz);
   buf->set_capacity(102400);
 
