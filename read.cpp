@@ -155,13 +155,14 @@ static constexpr auto deflate(context &img, hai::varray<uint8_t> &zlib) {
 static constexpr auto idat(hai::varray<uint8_t> &data) {
   return [&](yoyo::subreader r) {
     auto size = data.size() + r.raw_size();
-    data.add_capacity(size);
+    data.set_capacity(size);
     return r.read(data.end(), r.raw_size()).map([&] { data.expand(size); });
   };
 }
 
 static mno::req<void> read_idat(yoyo::reader &r, context &img) {
-  hai::varray<uint8_t> zlib{};
+  auto good_size_guess = img.w * img.h * img.ct * 2;
+  hai::varray<uint8_t> zlib{good_size_guess};
   return frk::take_all("IDAT", idat(zlib))(r).fmap(deflate(img, zlib));
 }
 static constexpr auto read_idat(context &img) {
