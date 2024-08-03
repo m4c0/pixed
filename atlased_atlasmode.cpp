@@ -109,8 +109,9 @@ void atlased::modes::atlas() {
 
   g_arrow_fn = cursor;
 
+  reset_casein();
+
   handle(FILES_DROP, files_drop);
-  reset_k(KEY_DOWN);
 
   handle(KEY_DOWN, K_DOT, [] { g_arrow_fn = spr_size; });
   handle(KEY_UP, K_DOT, [] { g_arrow_fn = cursor; });

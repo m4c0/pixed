@@ -24,7 +24,7 @@ namespace atlased::config {
 void load();
 const char *current_file();
 mno::req<void> set_current_file(jute::view);
-}
+} // namespace atlased::config
 
 pixed::context g_ctx = [] {
   auto res = pixed::create(256, 256);
@@ -55,6 +55,14 @@ static auto atlas(auto pd) {
 }
 
 namespace atlased {
+void reset_casein() {
+  using namespace casein;
+
+  handle(FILES_DROP, nullptr);
+  reset_k(KEY_DOWN);
+  reset_k(KEY_UP);
+}
+
 inline dotz::ivec2 image_size() { return dotz::ivec2{g_ctx.w, g_ctx.h}; }
 inline dotz::ivec2 grid_size() { return image_size() / g_ctx.spr_size; }
 

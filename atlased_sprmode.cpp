@@ -243,8 +243,7 @@ static void move_sprite() {
 void atlased::modes::sprite() {
   using namespace casein;
 
-  handle(FILES_DROP, nullptr);
-  reset_k(KEY_DOWN);
+  reset_casein();
 
   if (g_ctx.palette.size() != 0) {
     handle(KEY_DOWN, K_Q, [] { palette(-1); });

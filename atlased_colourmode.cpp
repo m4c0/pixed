@@ -39,8 +39,7 @@ void atlased::modes::colour(pixed::pixel *p,
   g_fn = fn;
   g_original = *p;
 
-  handle(FILES_DROP, nullptr);
-  reset_k(KEY_DOWN);
+  reset_casein();
 
   handle(KEY_DOWN, K_0, [] { type(0x0); });
   handle(KEY_DOWN, K_1, [] { type(0x1); });
