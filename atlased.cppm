@@ -43,17 +43,6 @@ pixed::context g_ctx = [] {
   return res;
 }();
 
-static auto atlas(auto pd) {
-  voo::h2l_image img{pd, g_ctx.w, g_ctx.h};
-
-  voo::mapmem m{img.host_memory()};
-  auto *c = static_cast<pixed::pixel *>(*m);
-  for (auto &p : g_ctx.image)
-    *c++ = p;
-
-  return img;
-}
-
 namespace atlased {
 void reset_casein() {
   using namespace casein;
@@ -66,7 +55,7 @@ void reset_casein() {
 inline dotz::ivec2 image_size() { return dotz::ivec2{g_ctx.w, g_ctx.h}; }
 inline dotz::ivec2 grid_size() { return image_size() / g_ctx.spr_size; }
 
-void load_atlas() { quack::donald::atlas(::atlas); }
+void load_atlas() { quack::donald::atlas(g_ctx.image.begin(), g_ctx.w, g_ctx.h); }
 dotz::ivec2 mark();
 } // namespace atlased
 
