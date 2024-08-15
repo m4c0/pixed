@@ -3,7 +3,7 @@ module atlased;
 static unsigned g_bit{};
 static pixed::pixel *g_target;
 static pixed::pixel g_original;
-static unsigned (*g_fn)(quack::instance *i);
+static void (*g_fn)(quack::instance *& i);
 
 static void type(unsigned n) {
   switch (g_bit++) {
@@ -31,7 +31,7 @@ static void reset() {
 }
 
 void atlased::modes::colour(pixed::pixel *p,
-                            unsigned (*fn)(quack::instance *)) {
+                            void (*fn)(quack::instance *&)) {
   using namespace casein;
 
   g_bit = 0;

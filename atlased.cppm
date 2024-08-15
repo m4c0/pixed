@@ -15,7 +15,7 @@ import voo;
 
 namespace atlased::modes {
 void atlas();
-void colour(pixed::pixel *p, unsigned (*fn)(quack::instance *));
+void colour(pixed::pixel *p, void (*fn)(quack::instance *&));
 void sprite(dotz::ivec2 p);
 void sprite();
 } // namespace atlased::modes

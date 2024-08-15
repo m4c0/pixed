@@ -9,8 +9,7 @@ static bool g_saving{};
 
 dotz::ivec2 atlased::mark() { return g_mark; }
 
-static unsigned data(quack::instance *start) {
-  auto i = start;
+static void data(quack::instance *& i) {
   auto [sw, sh] = atlased::grid_size();
   dotz::vec2 sz = atlased::grid_size();
 
@@ -44,7 +43,6 @@ static unsigned data(quack::instance *start) {
       };
     }
   }
-  return i - start;
 }
 
 static void cursor(dotz::ivec2 d) {

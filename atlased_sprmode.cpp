@@ -34,7 +34,7 @@ static void draw_brush(pixed::pixel bruh, dotz::vec2 pos, quack::instance *&i) {
   };
 }
 
-static unsigned data(quack::instance *i) {
+static void data(quack::instance *& i) {
   auto [sw, sh] = g_ctx.spr_size;
   dotz::vec2 sz = g_ctx.spr_size;
 
@@ -42,7 +42,6 @@ static unsigned data(quack::instance *i) {
       .grid_pos = sz / 2.0f,
       .grid_size = sz,
   });
-  auto pp = i;
 
   draw_brush(g_brush, {-3, static_cast<int>(g_pal)}, i);
 
@@ -119,7 +118,6 @@ static unsigned data(quack::instance *i) {
       };
     }
   }
-  return i - pp;
 }
 
 static void cursor(dotz::ivec2 d) {
