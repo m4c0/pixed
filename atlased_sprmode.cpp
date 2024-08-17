@@ -9,6 +9,7 @@ static dotz::ivec2 g_sprite{};
 static unsigned g_pal{};
 static pixed::pixel g_brush{255, 255, 255, 255};
 static bool g_area{};
+static bool g_tap_down{};
 
 static auto area() {
   auto s = dotz::min(g_cursor, g_cursor_e);
@@ -120,13 +121,6 @@ static void data(quack::instance *& i) {
   }
 }
 
-static void cursor(dotz::ivec2 d) {
-  g_cursor = (g_cursor + d + g_ctx.spr_size) % g_ctx.spr_size;
-  if (!g_area)
-    g_cursor_e = g_cursor;
-  quack::donald::data(::data);
-}
-
 static void palette(int d) {
   g_pal = (g_pal + d) % g_ctx.palette.size();
   g_brush = g_ctx.palette[g_pal];
@@ -141,6 +135,14 @@ static void tap() {
     }
   }
   atlased::load_atlas();
+  g_tap_down = true;
+}
+
+static void cursor(dotz::ivec2 d) {
+  g_cursor = (g_cursor + d + g_ctx.spr_size) % g_ctx.spr_size;
+  if (!g_area) g_cursor_e = g_cursor;
+  if (!g_area && g_tap_down) tap();
+  quack::donald::data(::data);
 }
 
 static void yank() {
@@ -253,6 +255,8 @@ void atlased::modes::sprite() {
 
   handle(KEY_DOWN, K_Y, yank);
   handle(KEY_DOWN, K_SPACE, tap);
+
+  handle(KEY_UP, K_SPACE, [] { g_tap_down = false; });
 
   handle(KEY_DOWN, K_COMMA, [] { atlased::modes::colour(&g_brush, ::data); });
 
