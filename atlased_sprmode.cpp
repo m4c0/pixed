@@ -138,6 +138,26 @@ static void tap() {
   g_tap_down = true;
 }
 
+static void fill(int x, int y, dotz::ivec4 o) {
+  if (x < 0 || x >= g_ctx.spr_size.x || y < 0 || y >= g_ctx.spr_size.y) return;
+
+  auto &p = g_ctx.image[idx(x, y)];
+  if (pixed::to_ivec4(p) != o) return;
+
+  p = g_brush;
+  fill(x - 1, y, o);
+  fill(x + 1, y, o);
+  fill(x, y - 1, o);
+  fill(x, y + 1, o);
+}
+static void fill() {
+  if (g_area) return;
+  auto c = pixed::to_ivec4(g_ctx.image[idx(g_cursor.x, g_cursor.y)]);
+  if (pixed::to_ivec4(g_brush) == c) return;
+  fill(g_cursor.x, g_cursor.y, c);
+  atlased::load_atlas();
+}
+
 static void cursor(dotz::ivec2 d) {
   g_cursor = (g_cursor + d + g_ctx.spr_size) % g_ctx.spr_size;
   if (!g_area) g_cursor_e = g_cursor;
@@ -265,6 +285,8 @@ void atlased::modes::sprite() {
 
   handle(KEY_DOWN, K_M, move_sprite);
   handle(KEY_UP, K_M, move_cursor);
+
+  handle(KEY_DOWN, K_L, fill);
 
   move_cursor();
   handle(KEY_DOWN, K_ESCAPE, modes::atlas);
