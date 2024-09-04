@@ -1,4 +1,5 @@
 module atlased;
+import hai;
 import traits;
 
 using namespace traits::ints;
@@ -21,7 +22,7 @@ static auto area() {
 }
 
 static auto idx(unsigned x, unsigned y) {
-  auto c = g_sprite + dotz::ivec2{x, y};
+  auto c = g_sprite + (dotz::ivec2{x, y} + g_ctx.spr_size) % g_ctx.spr_size;
   return c.y * g_ctx.w + c.x;
 }
 
@@ -157,6 +158,31 @@ static void fill() {
   fill(g_cursor.x, g_cursor.y, c);
   atlased::load_atlas();
 }
+static void smudge() {
+  auto [s, e] = area();
+  auto [w, h] = e - s + 1;
+  hai::array<dotz::ivec4> buf { static_cast<unsigned>(w * h) };
+  auto bp = buf.begin();
+  for (dotz::ivec2 p = {}; p.y < h; p.y++) {
+    for (p.x = 0; p.x < w; p.x++) {
+      auto base = s + p;
+      *bp++ = (
+        pixed::to_ivec4(g_ctx.image[idx(base.x, base.y)]) +
+        pixed::to_ivec4(g_ctx.image[idx(base.x - 1, base.y)]) +
+        pixed::to_ivec4(g_ctx.image[idx(base.x + 1, base.y)]) +
+        pixed::to_ivec4(g_ctx.image[idx(base.x, base.y - 1)]) +
+        pixed::to_ivec4(g_ctx.image[idx(base.x, base.y + 1)])
+      ) / 5;
+    }
+  }
+  bp = buf.begin();
+  for (auto y = s.y; y <= e.y; y++) {
+    for (auto x = s.x; x <= e.x; x++) {
+      g_ctx.image[idx(x, y)] = pixed::from_ivec4(*bp++);
+    }
+  }
+  atlased::load_atlas();
+}
 
 static void cursor(dotz::ivec2 d) {
   g_cursor = (g_cursor + d + g_ctx.spr_size) % g_ctx.spr_size;
@@ -287,6 +313,7 @@ void atlased::modes::sprite() {
   handle(KEY_UP, K_M, move_cursor);
 
   handle(KEY_DOWN, K_L, fill);
+  handle(KEY_DOWN, K_S, smudge);
 
   move_cursor();
   handle(KEY_DOWN, K_ESCAPE, modes::atlas);
