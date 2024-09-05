@@ -167,12 +167,12 @@ static void smudge() {
     for (p.x = 0; p.x < w; p.x++) {
       auto base = s + p;
       *bp++ = (
-        pixed::to_ivec4(g_ctx.image[idx(base.x, base.y)]) +
+        pixed::to_ivec4(g_ctx.image[idx(base.x, base.y)]) * 2 +
         pixed::to_ivec4(g_ctx.image[idx(base.x - 1, base.y)]) +
         pixed::to_ivec4(g_ctx.image[idx(base.x + 1, base.y)]) +
         pixed::to_ivec4(g_ctx.image[idx(base.x, base.y - 1)]) +
         pixed::to_ivec4(g_ctx.image[idx(base.x, base.y + 1)])
-      ) / 5;
+      ) / 6;
     }
   }
   bp = buf.begin();
